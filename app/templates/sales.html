@@ -43,7 +43,9 @@
         <td class="text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.note or '—' }}</td>
         <td class="text-mono"><strong>R$ {{ "%.2f"|format(s.total) }}</strong></td>
         <td>
-          {% if s.paid %}
+          {% if s.get('is_orcamento') %}
+            <span class="badge badge-muted">📋 Orçamento</span>
+          {% elif s.paid %}
             <span class="badge badge-green">✓ Pago</span>
           {% else %}
             <span class="badge badge-orange">Pendente</span>

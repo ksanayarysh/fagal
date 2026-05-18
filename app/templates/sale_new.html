@@ -3,55 +3,116 @@
 
 {% block head %}
 <style>
-.orca-item {
+.sale-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr 36px;
-  gap: 10px;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
   align-items: start;
+}
+/* LEFT — search + results */
+.search-wrap { position: relative; margin-bottom: 12px; }
+.search-wrap input { padding-left: 36px; }
+.search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:1rem; pointer-events:none; }
+.results-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+.mat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.mat-row:last-child { border-bottom: none; }
+.mat-row:hover { background: var(--surface2); }
+.mat-info { flex: 1; min-width: 0; }
+.mat-row-name { font-weight: 600; font-size: .95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mat-row-sub { font-size: .82rem; color: var(--muted); margin-top: 2px; }
+.mat-row-price { font-family: var(--mono); color: var(--accent); font-size: 1rem; white-space:nowrap; }
+.mat-stock-ok { color: var(--green); font-size: .78rem; }
+.mat-stock-no { color: var(--muted); font-size: .78rem; }
+.add-btn {
   background: var(--surface2);
   border: 1px solid var(--border);
+  color: var(--text);
   border-radius: var(--radius);
-  padding: 12px;
-  margin-bottom: 8px;
-}
-.orca-item-inner { display: flex; flex-direction: column; gap: 6px; }
-.orca-item-right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-.orca-subtotal { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--accent); }
-.dim-row { display: flex; gap: 6px; align-items: center; font-size:.82rem; color:var(--muted); }
-.dim-row input { width: 110px; }
-.qty-row { display: flex; gap: 6px; align-items: center; }
-.qty-row input { width: 90px; }
-.mat-name { font-weight: 600; font-size: .92rem; }
-.mat-unit { font-family: var(--mono); font-size: .75rem; }
-.remove-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
+  padding: 6px 14px;
   cursor: pointer;
-  font-size: 1.1rem;
-  padding: 4px;
-  align-self: flex-start;
+  font-size: .85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s;
 }
-.remove-btn:hover { color: var(--red); }
-.total-bar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 0;
-  border-top: 2px solid var(--border);
-  margin-top: 8px;
-}
-.total-label { color: var(--muted); font-size: .85rem; }
-.total-val { font-family: var(--mono); font-size: 1.6rem; font-weight: 800; color: var(--accent); }
+.add-btn:hover { background: var(--accent); color: #111; border-color: var(--accent); }
 
-.material-select-wrap {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  align-items: center;
+/* RIGHT — cart */
+.cart-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: sticky;
+  top: 20px;
 }
-.material-select-wrap select { flex: 1; }
+.cart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.cart-badge {
+  background: var(--accent);
+  color: #111;
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: .8rem;
+  font-weight: 800;
+}
+.cart-items { padding: 8px 0; max-height: 340px; overflow-y: auto; }
+.cart-item {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.cart-item:last-child { border-bottom: none; }
+.cart-item-name { font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
+.cart-item-controls { display: flex; align-items: center; gap: 8px; }
+.cart-item-controls input {
+  width: 80px;
+  padding: 5px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: .9rem;
+}
+.cart-item-controls input:focus { outline: none; border-color: var(--accent); }
+.cart-item-unit { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+.cart-item-sub { font-family: var(--mono); font-size: .9rem; font-weight: 700; color: var(--accent); margin-left: auto; }
+.cart-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:2px 4px; }
+.cart-remove:hover { color: var(--red); }
+.cart-dim { display:flex; align-items:center; gap:6px; }
+.cart-dim input { width: 68px; }
+.cart-dim span { font-size:.8rem; color:var(--muted); }
+.cart-empty { padding: 28px 20px; text-align: center; color: var(--muted); font-size:.875rem; }
+
+.cart-labor { padding: 12px 20px; border-top: 1px solid var(--border); }
+.cart-labor-title { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.cart-labor input { margin-bottom: 6px; }
+
+.cart-totals { padding: 12px 20px; border-top: 2px solid var(--border); }
+.cart-total-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:.875rem; }
+.cart-total-row.grand { font-size:1.2rem; font-weight:800; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+.cart-total-row.grand span:last-child { font-family:var(--mono); color:var(--accent); }
+
+.cart-actions { padding: 12px 20px 16px; display:flex; flex-direction:column; gap:8px; }
+.cart-actions .btn { width: 100%; justify-content: center; }
+
+/* client row at top of cart */
+.cart-client { padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.cart-client input { margin-bottom: 6px; }
+.cart-paid-row { display:flex; align-items:center; gap:8px; margin-top:6px; }
 </style>
 {% endblock %}
 
@@ -59,74 +120,75 @@
 <div class="page-header">
   <div>
     <div class="page-title">Nova venda</div>
-    <div class="page-subtitle">Monte o orçamento e registre</div>
+    <div class="page-subtitle">Busque materiais e monte o carrinho</div>
   </div>
   <a href="/vendas" class="btn btn-secondary">← Voltar</a>
 </div>
 
-<div class="card mb-16">
-  <div class="grid-2">
-    <div class="form-group">
-      <label class="form-label">Cliente *</label>
-      <input type="text" id="clientName" class="form-control" placeholder="Nome do cliente">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Observação</label>
-      <input type="text" id="noteField" class="form-control" placeholder="Ex: Portão da garagem, Rua X...">
-    </div>
-  </div>
-</div>
-
-<div class="card mb-16">
-  <div style="font-weight:700;margin-bottom:14px;">Materiais</div>
-
-  <div style="margin-bottom:12px;">
-    <input type="text" id="matSearch" class="form-control"
-           placeholder="Buscar material..." oninput="filterMaterials(this.value)" autocomplete="off">
-  </div>
-  <div id="matGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:16px;max-height:320px;overflow-y:auto;"></div>
-
-  <div id="itemsList"></div>
-
-  <div class="total-bar" style="flex-direction:column;align-items:flex-end;gap:6px;">
-    <div style="display:flex;gap:16px;align-items:center;">
-      <span class="total-label">Materiais</span>
-      <span class="text-mono" id="materialsTotal" style="font-size:1.1rem;">R$ 0,00</span>
-    </div>
-    <div style="display:flex;gap:16px;align-items:center;" id="laborRow" style="display:none;">
-      <span class="total-label">Mão de obra</span>
-      <span class="text-mono" id="laborTotal" style="font-size:1.1rem;">R$ 0,00</span>
-    </div>
-    <div style="display:flex;gap:16px;align-items:center;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
-      <span class="total-label">TOTAL</span>
-      <span class="total-val" id="grandTotal">R$ 0,00</span>
+<div class="sale-layout">
+  <!-- LEFT: search + list -->
+  <div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:16px 20px 12px;">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="matSearch" class="form-control"
+                 placeholder="Buscar material por nome ou categoria..."
+                 oninput="filterMaterials(this.value)" autocomplete="off">
+        </div>
+        <div class="results-label" id="resultsLabel">Todos os materiais</div>
+      </div>
+      <div id="matList"></div>
     </div>
   </div>
-</div>
 
-<div class="card mb-16">
-  <div style="font-weight:700;margin-bottom:14px;">Mão de obra</div>
-  <div class="grid-2">
-    <div class="form-group">
-      <label class="form-label">Descrição</label>
-      <input type="text" id="laborDesc" class="form-control" placeholder="Ex: Instalação, solda, pintura...">
+  <!-- RIGHT: cart -->
+  <div class="cart-panel">
+    <div class="cart-header">
+      🛒 Carrinho
+      <span class="cart-badge" id="cartCount">0</span>
     </div>
-    <div class="form-group">
-      <label class="form-label">Valor (R$)</label>
-      <input type="text" inputmode="decimal" id="laborVal" class="form-control" placeholder="0,00"
-             oninput="updateLaborTotal()" onkeyup="commaToPoint(this)">
+
+    <div class="cart-client">
+      <input type="text" id="clientName" class="form-control" placeholder="Nome do cliente *" style="margin-bottom:6px;">
+      <input type="text" id="noteField" class="form-control" placeholder="Observação (obra, endereço...)">
+      <div class="cart-paid-row">
+        <input type="checkbox" id="paidCheck" style="width:17px;height:17px;accent-color:var(--green);">
+        <label for="paidCheck" style="font-size:.875rem;font-weight:600;">Marcar como pago</label>
+      </div>
+    </div>
+
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">Adicione materiais da lista</div>
+    </div>
+
+    <div class="cart-labor">
+      <div class="cart-labor-title">Mão de obra</div>
+      <input type="text" id="laborDesc" class="form-control" placeholder="Descrição (solda, instalação...)">
+      <input type="text" inputmode="decimal" id="laborVal" class="form-control"
+             placeholder="R$ 0,00" oninput="updateTotals()" onkeyup="commaToPoint(this)">
+    </div>
+
+    <div class="cart-totals">
+      <div class="cart-total-row">
+        <span style="color:var(--muted);">Materiais</span>
+        <span class="text-mono" id="totMaterials">R$ 0,00</span>
+      </div>
+      <div class="cart-total-row" id="totLaborRow" style="display:none;">
+        <span style="color:var(--muted);">Mão de obra</span>
+        <span class="text-mono" id="totLabor">R$ 0,00</span>
+      </div>
+      <div class="cart-total-row grand">
+        <span>TOTAL</span>
+        <span id="totGrand">R$ 0,00</span>
+      </div>
+    </div>
+
+    <div class="cart-actions">
+      <button class="btn btn-primary" onclick="submitSale(false)">💾 Finalizar venda</button>
+      <button class="btn btn-secondary" onclick="submitSale(true)">📋 Salvar como orçamento</button>
     </div>
   </div>
-</div>
-
-<div class="card">
-  <div class="flex items-center gap-8 mb-16">
-    <input type="checkbox" id="paidCheck" style="width:18px;height:18px;accent-color:var(--green);">
-    <label for="paidCheck" style="font-weight:600;">Marcar como pago</label>
-  </div>
-  <button class="btn btn-primary" onclick="submitSale()" style="min-width:160px;">
-    💾 Registrar venda
-  </button>
 </div>
 {% endblock %}
 
@@ -134,128 +196,126 @@
 <script>
 const materials = {{ materials | tojson }};
 let items = [];
-
-// unit display
-const UNIT_LABEL = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
-const NEEDS_DIM = {m2: true, m3: false}; // m2 = L×W, m3 = L×W×H would be complex, keep as qty for now
+const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
 
 function fmtBRL(v) {
   return 'R$ ' + v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 }
 
+function commaToPoint(el) {
+  const pos = el.selectionStart;
+  const had = el.value.includes(',');
+  el.value = el.value.replace(',', '.');
+  if (had) el.setSelectionRange(pos, pos);
+}
+
+/* ---- SEARCH LIST ---- */
+function filterMaterials(q) {
+  const query = q.trim().toLowerCase();
+  const filtered = query
+    ? materials.filter(m => m.name.toLowerCase().includes(query) || m.category.toLowerCase().includes(query))
+    : materials;
+  document.getElementById('resultsLabel').textContent =
+    query ? `Resultados: ${filtered.length}` : `Todos os materiais (${materials.length})`;
+  renderMatList(filtered);
+}
+
+function renderMatList(list) {
+  const el = document.getElementById('matList');
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Nenhum material encontrado</div>';
+    return;
+  }
+  el.innerHTML = list.map(m => {
+    const unitLabel = UNIT[m.unit] || m.unit;
+    const stock = m.qty_stock > 0
+      ? `<span class="mat-stock-ok">▲ ${Number.isInteger(m.qty_stock) ? m.qty_stock : m.qty_stock.toFixed(2)} ${unitLabel}</span>`
+      : `<span class="mat-stock-no">sem estoque</span>`;
+    return `<div class="mat-row">
+      <div class="mat-info">
+        <div class="mat-row-name">${m.name}</div>
+        <div class="mat-row-sub">${m.category} · ${stock}</div>
+      </div>
+      <span class="mat-row-price">${fmtBRL(m.price)}/${unitLabel}</span>
+      <button class="add-btn" onclick="addItem(${m.id})">+ Carrinho</button>
+    </div>`;
+  }).join('');
+}
+
+/* ---- CART ---- */
 function addItem(matId) {
   const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-  const item = {
+  // if already in cart, just increment qty
+  const existing = items.find(i => i.material_id == matId);
+  if (existing) {
+    if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
+    else existing.qty += 1;
+    existing.subtotal = existing.qty * existing.unit_price;
+    renderCart();
+    return;
+  }
+  items.push({
     id: Date.now(),
     material_id: mat.id,
     material_name: mat.name,
     unit: mat.unit,
     unit_price: parseFloat(mat.price),
-    length: 1,
-    width: 1,
-    qty: 1,
+    length: 1, width: 1, qty: 1,
     subtotal: parseFloat(mat.price),
-  };
-  items.push(item);
-  renderItems();
-  // clear search
-  document.getElementById('matSearch').value = '';
-  filterMaterials('');
+  });
+  renderCart();
 }
 
-function filterMaterials(q) {
-  const grid = document.getElementById('matGrid');
-  const query = q.trim().toLowerCase();
-  const filtered = query
-    ? materials.filter(m => m.name.toLowerCase().includes(query) || m.category.toLowerCase().includes(query))
-    : materials;
+function renderCart() {
+  const el = document.getElementById('cartItems');
+  document.getElementById('cartCount').textContent = items.length;
 
-  if (!filtered.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:.875rem;padding:8px;">Nenhum material encontrado</div>';
-    return;
-  }
-
-  const UNIT = {m2:'m²',m3:'m³',m:'m',un:'un',kg:'kg'};
-  grid.innerHTML = filtered.map(m => {
-    const stock = m.qty_stock > 0
-      ? `<span style="color:var(--green);font-size:.78rem;">▲ ${m.qty_stock % 1 === 0 ? m.qty_stock : m.qty_stock.toFixed(2)} ${UNIT[m.unit]||m.unit}</span>`
-      : `<span style="color:var(--muted);font-size:.78rem;">sem estoque</span>`;
-    return `<div onclick="addItem(${m.id})" style="
-        background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
-        padding:10px 12px;cursor:pointer;transition:border-color .15s;"
-        onmouseover="this.style.borderColor='var(--accent)'"
-        onmouseout="this.style.borderColor='var(--border)'">
-      <div style="font-weight:600;font-size:.9rem;margin-bottom:3px;">${m.name}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-family:var(--mono);color:var(--accent);font-size:.95rem;">R$ ${m.price.toFixed(2).replace('.',',')}/${UNIT[m.unit]||m.unit}</span>
-        ${stock}
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">${m.category}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderItems() {
-  const el = document.getElementById('itemsList');
   if (!items.length) {
-    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px 0;font-size:.875rem;">Nenhum material adicionado</div>';
-    updateTotal();
+    el.innerHTML = '<div class="cart-empty">Adicione materiais da lista</div>';
+    updateTotals();
     return;
   }
 
   el.innerHTML = items.map(item => {
-    const needsDim = item.unit === 'm2';
-    const needsLinear = item.unit === 'm';
-    const label = UNIT_LABEL[item.unit] || item.unit;
-
-    let qtyHtml = '';
-    if (needsDim) {
-      qtyHtml = `
-        <div class="dim-row">
-          <span>Largura:</span>
-          <input type="text" inputmode="decimal" class="form-control" value="${item.width}"
-                 oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"> m
-          <span style="margin-left:4px;">× Comprimento:</span>
-          <input type="text" inputmode="decimal" class="form-control" value="${item.length}"
-                 oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"> m
+    const unitLabel = UNIT[item.unit] || item.unit;
+    let controls = '';
+    if (item.unit === 'm2') {
+      controls = `
+        <div class="cart-dim">
+          <span>L:</span>
+          <input type="text" inputmode="decimal" value="${item.width}"
+            oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)">
+          <span>m × C:</span>
+          <input type="text" inputmode="decimal" value="${item.length}"
+            oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)">
+          <span>m</span>
         </div>
-        <div class="dim-area" style="font-size:.8rem;color:var(--muted);">= ${(item.length * item.width).toFixed(3)} m²</div>
-      `;
+        <div class="dim-area" style="font-size:.78rem;color:var(--muted);margin-top:3px;">= ${(item.length*item.width).toFixed(3)} m²</div>`;
     } else {
-      qtyHtml = `
-        <div class="qty-row">
-          <input type="number" class="form-control" step="${item.unit==='un'?'1':'0.01'}"
-                 min="${item.unit==='un'?'1':'0.01'}" value="${item.qty}"
-                 oninput="updateQty(${item.id},this.value)">
-          <span class="mat-unit">${label}</span>
-        </div>
-      `;
+      controls = `<div class="cart-item-controls">
+        <input type="${item.unit==='un'?'number':'text'}" inputmode="decimal"
+          value="${item.unit==='un'?item.qty:item.qty}"
+          step="${item.unit==='un'?'1':'0.01'}"
+          oninput="updateQty(${item.id},this.value)" onkeyup="commaToPoint(this)">
+        <span class="cart-item-unit">${unitLabel}</span>
+      </div>`;
     }
 
-    return `
-      <div class="orca-item" data-item-id="${item.id}">
-        <div class="orca-item-inner">
-          <div class="mat-name">${item.material_name}</div>
-          <div style="font-size:.8rem;color:var(--muted);">R$ ${item.unit_price.toFixed(2).replace('.',',')} / ${label}</div>
-          ${qtyHtml}
-        </div>
-        <div class="orca-item-right">
-          <div class="orca-subtotal">${fmtBRL(item.subtotal)}</div>
-        </div>
-        <button class="remove-btn" onclick="removeItem(${item.id})">✕</button>
+    return `<div class="cart-item" data-item-id="${item.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div class="cart-item-name">${item.material_name}</div>
+        <button class="cart-remove" onclick="removeItem(${item.id})">✕</button>
       </div>
-    `;
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:8px;">
+        <div>${controls}</div>
+        <div class="cart-item-sub orca-subtotal">${fmtBRL(item.subtotal)}</div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">${fmtBRL(item.unit_price)}/${unitLabel}</div>
+    </div>`;
   }).join('');
 
-  updateTotal();
-}
-
-function commaToPoint(el) {
-  const pos = el.selectionStart;
-  const hadComma = el.value.includes(',');
-  el.value = el.value.replace(',', '.');
-  if (hadComma) el.setSelectionRange(pos, pos);
+  updateTotals();
 }
 
 function updateDim(id, field, val) {
@@ -264,71 +324,61 @@ function updateDim(id, field, val) {
   item[field] = parseFloat(val.replace(',','.')) || 0;
   item.qty = item.length * item.width;
   item.subtotal = item.qty * item.unit_price;
-  // update only subtotal display, not full re-render
   const row = document.querySelector(`[data-item-id="${id}"]`);
   if (row) {
     row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
     const area = row.querySelector('.dim-area');
     if (area) area.textContent = '= ' + item.qty.toFixed(3) + ' m²';
   }
-  updateTotal();
+  updateTotals();
 }
 
 function updateQty(id, val) {
   const item = items.find(i => i.id === id);
   if (!item) return;
-  item.qty = parseFloat(val.replace(',','.')) || 0;
+  item.qty = parseFloat(String(val).replace(',','.')) || 0;
   item.subtotal = item.qty * item.unit_price;
   const row = document.querySelector(`[data-item-id="${id}"]`);
   if (row) row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
-  updateTotal();
+  updateTotals();
 }
 
 function removeItem(id) {
   items = items.filter(i => i.id !== id);
-  renderItems();
+  renderCart();
 }
 
-function getLaborVal() {
-  return parseFloat((document.getElementById('laborVal').value||'0').replace(',','.')) || 0;
+function getLabor() {
+  return parseFloat((document.getElementById('laborVal').value||'').replace(',','.')) || 0;
 }
 
-function updateLaborTotal() {
-  const labor = getLaborVal();
-  const laborRow = document.getElementById('laborRow');
+function updateTotals() {
+  const mat = items.reduce((s,i) => s + i.subtotal, 0);
+  const labor = getLabor();
+  document.getElementById('totMaterials').textContent = fmtBRL(mat);
+  const laborRow = document.getElementById('totLaborRow');
   if (labor > 0) {
     laborRow.style.display = 'flex';
-    document.getElementById('laborTotal').textContent = fmtBRL(labor);
+    document.getElementById('totLabor').textContent = fmtBRL(labor);
   } else {
     laborRow.style.display = 'none';
   }
-  updateTotal();
+  document.getElementById('totGrand').textContent = fmtBRL(mat + labor);
 }
 
-function updateTotal() {
-  const matTotal = items.reduce((s, i) => s + i.subtotal, 0);
-  const labor = getLaborVal();
-  document.getElementById('materialsTotal').textContent = fmtBRL(matTotal);
-  document.getElementById('grandTotal').textContent = fmtBRL(matTotal + labor);
-}
-
-async function submitSale() {
+async function submitSale(orcamento) {
   const client = document.getElementById('clientName').value.trim();
-  if (!client) { alert('Informe o nome do cliente!'); return; }
+  if (!client) { alert('Informe o nome do cliente!'); document.getElementById('clientName').focus(); return; }
   if (!items.length) { alert('Adicione pelo menos um material!'); return; }
 
-  const paid = document.getElementById('paidCheck').checked;
-  const note = document.getElementById('noteField').value.trim();
-
-  const labor = getLaborVal();
-  const laborDesc = document.getElementById('laborDesc').value.trim();
-
+  const labor = getLabor();
   const payload = {
     client,
-    note,
-    paid,
+    note: document.getElementById('noteField').value.trim(),
+    paid: orcamento ? false : document.getElementById('paidCheck').checked,
     labor,
-    labor_desc: laborDesc,
+    labor_desc: document.getElementById('laborDesc').value.trim(),
+    orcamento,
     items: items.map(i => ({
       material_id: i.material_id,
       material_name: i.material_name,
@@ -345,15 +395,12 @@ async function submitSale() {
     body: JSON.stringify(payload),
   });
   const data = await r.json();
-  if (data.ok) {
-    window.location.href = `/vendas/${data.sale_id}`;
-  } else {
-    alert('Erro: ' + data.error);
-  }
+  if (data.ok) window.location.href = `/vendas/${data.sale_id}`;
+  else alert('Erro: ' + data.error);
 }
 
 // init
-renderItems();
 filterMaterials('');
+renderCart();
 </script>
 {% endblock %}

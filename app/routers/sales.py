@@ -53,19 +53,22 @@ async def create_sale(request: Request):
     paid = body.get("paid", False)
     labor = float(body.get("labor", 0) or 0)
     labor_desc = body.get("labor_desc", "").strip()
+    orcamento = body.get("orcamento", False)
 
     if not client or not items:
         return JSONResponse({"error": "Dados incompletos"}, status_code=400)
 
     materials_total = sum(float(i["subtotal"]) for i in items)
     total = round(materials_total + labor, 2)
+    # orçamento = not paid, no stock deduction
+    is_paid = False if orcamento else paid
 
     pool = request.app.state.db
     async with pool.acquire() as conn:
         sale_id = await conn.fetchval(
-            """INSERT INTO sales (client_name, note, labor, labor_desc, total, paid)
-               VALUES ($1,$2,$3,$4,$5,$6) RETURNING id""",
-            client, note or None, round(labor, 2), labor_desc or None, total, paid
+            """INSERT INTO sales (client_name, note, labor, labor_desc, total, paid, is_orcamento)
+               VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id""",
+            client, note or None, round(labor, 2), labor_desc or None, total, is_paid, orcamento
         )
         for item in items:
             mid = item.get("material_id")
@@ -77,8 +80,8 @@ async def create_sale(request: Request):
                 sale_id, mid, item["material_name"], item["unit"],
                 qty, float(item["unit_price"]), round(float(item["subtotal"]), 2),
             )
-            # deduct from stock
-            if mid:
+            # deduct from stock only for real sales, not orçamentos
+            if mid and not orcamento:
                 await conn.execute(
                     "UPDATE materials SET qty_stock = GREATEST(0, qty_stock - $1) WHERE id=$2",
                     qty, mid
