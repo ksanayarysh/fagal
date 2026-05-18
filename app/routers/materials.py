@@ -76,4 +76,9 @@ async def api_materials(request: Request):
     rows = await pool.fetch(
         "SELECT id, name, category, unit, price FROM materials WHERE active=TRUE ORDER BY category, name"
     )
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = dict(r)
+        d.pop("created_at", None)
+        result.append(d)
+    return result
