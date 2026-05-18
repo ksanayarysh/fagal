@@ -18,7 +18,7 @@
 .orca-item-right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 .orca-subtotal { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--accent); }
 .dim-row { display: flex; gap: 6px; align-items: center; font-size:.82rem; color:var(--muted); }
-.dim-row input { width: 72px; }
+.dim-row input { width: 110px; }
 .qty-row { display: flex; gap: 6px; align-items: center; }
 .qty-row input { width: 90px; }
 .mat-name { font-weight: 600; font-size: .92rem; }
@@ -176,11 +176,11 @@ function renderItems() {
       qtyHtml = `
         <div class="dim-row">
           <span>Largura:</span>
-          <input type="number" class="form-control" step="0.01" min="0.01" value="${item.width}"
-                 oninput="updateDim(${item.id},'width',this.value)"> m
+          <input type="text" inputmode="decimal" class="form-control" value="${item.width}"
+                 oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"> m
           <span style="margin-left:4px;">× Comprimento:</span>
-          <input type="number" class="form-control" step="0.01" min="0.01" value="${item.length}"
-                 oninput="updateDim(${item.id},'length',this.value)"> m
+          <input type="text" inputmode="decimal" class="form-control" value="${item.length}"
+                 oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"> m
         </div>
         <div style="font-size:.8rem;color:var(--muted);">= ${(item.length * item.width).toFixed(3)} m²</div>
       `;
@@ -211,6 +211,11 @@ function renderItems() {
   }).join('');
 
   updateTotal();
+}
+
+function commaToPoint(el) {
+  const v = el.value.replace(',', '.');
+  if (el.value !== v) { el.value = v; el.dispatchEvent(new Event('input')); }
 }
 
 function updateDim(id, field, val) {
