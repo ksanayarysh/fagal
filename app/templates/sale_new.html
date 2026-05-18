@@ -250,6 +250,7 @@ function addItem(matId) {
   const existing = items.find(i => i.material_id == matId);
   if (existing) {
     if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
+    else if (existing.unit === 'm3') { existing.length += 1; existing.qty = existing.length * existing.width * existing.height; }
     else existing.qty += 1;
     existing.subtotal = existing.qty * existing.unit_price;
     renderCart();
@@ -261,7 +262,7 @@ function addItem(matId) {
     material_name: mat.name,
     unit: mat.unit,
     unit_price: parseFloat(mat.price),
-    length: 1, width: 1, qty: 1,
+    length: 1, width: 1, height: 1, qty: 1,
     subtotal: parseFloat(mat.price),
   });
   renderCart();
@@ -292,6 +293,21 @@ function renderCart() {
           <span>m</span>
         </div>
         <div class="dim-area" style="font-size:.78rem;color:var(--muted);margin-top:3px;">= ${(item.length*item.width).toFixed(3)} m²</div>`;
+    } else if (item.unit === 'm3') {
+      controls = `
+        <div class="cart-dim">
+          <span>L:</span>
+          <input type="text" inputmode="decimal" value="${item.width}"
+            oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)">
+          <span>m × C:</span>
+          <input type="text" inputmode="decimal" value="${item.length}"
+            oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)">
+          <span>m × A:</span>
+          <input type="text" inputmode="decimal" value="${item.height}"
+            oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)">
+          <span>m</span>
+        </div>
+        <div class="dim-area" style="font-size:.78rem;color:var(--muted);margin-top:3px;">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
     } else {
       controls = `<div class="cart-item-controls">
         <input type="${item.unit==='un'?'number':'text'}" inputmode="decimal"
@@ -329,6 +345,21 @@ function updateDim(id, field, val) {
     row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
     const area = row.querySelector('.dim-area');
     if (area) area.textContent = '= ' + item.qty.toFixed(3) + ' m²';
+  }
+  updateTotals();
+}
+
+function updateDim3(id, field, val) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item[field] = parseFloat(val.replace(',','.')) || 0;
+  item.qty = item.length * item.width * item.height;
+  item.subtotal = item.qty * item.unit_price;
+  const row = document.querySelector(`[data-item-id="${id}"]`);
+  if (row) {
+    row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
+    const area = row.querySelector('.dim-area');
+    if (area) area.textContent = '= ' + item.qty.toFixed(3) + ' m³';
   }
   updateTotals();
 }
