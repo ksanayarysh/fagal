@@ -33,9 +33,14 @@ async def new_sale_page(request: Request):
     materials = await pool.fetch(
         "SELECT id, name, category, unit, price FROM materials WHERE active=TRUE ORDER BY category, name"
     )
+    mats = []
+    for m in materials:
+        d = dict(m)
+        d["price"] = float(d["price"])
+        mats.append(d)
     return templates.TemplateResponse("sale_new.html", {
         "request": request,
-        "materials": [dict(m) for m in materials],
+        "materials": mats,
     })
 
 @router.post("/nova")

@@ -21,7 +21,7 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -45,7 +45,7 @@ a:hover { color: var(--accent2); }
   margin-right: 32px;
   font-family: var(--mono);
 }
-.nav-logo span { color: var(--muted); font-weight: 400; font-size: .8rem; }
+.nav-logo span { color: var(--muted); font-weight: 400; font-size: .9rem; }
 .nav a {
   color: var(--muted);
   padding: 0 16px;
@@ -55,7 +55,7 @@ a:hover { color: var(--accent2); }
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   font-weight: 500;
-  font-size: .9rem;
+  font-size: 1rem;
   transition: color .15s, border-color .15s;
 }
 .nav a:hover, .nav a.active { color: var(--text); border-bottom-color: var(--accent); }
@@ -87,7 +87,7 @@ a:hover { color: var(--accent2); }
   border: none;
   cursor: pointer;
   font-family: var(--font);
-  font-size: .875rem;
+  font-size: 1rem;
   font-weight: 600;
   transition: opacity .15s, transform .1s;
 }
@@ -97,7 +97,7 @@ a:hover { color: var(--accent2); }
 .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-danger { background: var(--red); color: #fff; }
 .btn-green { background: var(--green); color: #111; }
-.btn-sm { padding: 5px 12px; font-size: .8rem; }
+.btn-sm { padding: 5px 12px; font-size: .9rem; }
 
 /* CARD */
 .card {
@@ -111,14 +111,14 @@ a:hover { color: var(--accent2); }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-th { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
-td { font-size: .9rem; }
+th { font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+td { font-size: 1rem; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--surface2); }
 
 /* FORM */
 .form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+.form-label { display: block; font-size: .9rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
 .form-control {
   width: 100%;
   padding: 9px 12px;
@@ -127,7 +127,7 @@ tr:hover td { background: var(--surface2); }
   border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
-  font-size: .9rem;
+  font-size: 1rem;
   transition: border-color .15s;
 }
 .form-control:focus { outline: none; border-color: var(--accent); }
@@ -142,7 +142,7 @@ select.form-control option { background: var(--surface2); }
   display: inline-block;
   padding: 2px 8px;
   border-radius: 20px;
-  font-size: .75rem;
+  font-size: .82rem;
   font-weight: 700;
 }
 .badge-green { background: rgba(46,204,113,.15); color: var(--green); }
@@ -156,7 +156,7 @@ select.form-control option { background: var(--surface2); }
   padding: 1px 7px;
   border-radius: 4px;
   font-family: var(--mono);
-  font-size: .75rem;
+  font-size: .82rem;
   background: var(--surface2);
   color: var(--accent);
   border: 1px solid var(--border);
@@ -172,7 +172,7 @@ select.form-control option { background: var(--surface2); }
   flex: 1;
   min-width: 160px;
 }
-.stat-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.stat-label { font-size: .82rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
 .stat-value { font-size: 1.6rem; font-weight: 800; font-family: var(--mono); color: var(--accent); }
 
 /* ORCAMENTO BUILDER */
@@ -235,7 +235,7 @@ select.form-control option { background: var(--surface2); }
 /* CATEGORY GROUP */
 .cat-group { margin-bottom: 28px; }
 .cat-title {
-  font-size: .75rem;
+  font-size: .82rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
