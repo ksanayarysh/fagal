@@ -3,116 +3,131 @@
 
 {% block head %}
 <style>
+/* ── LAYOUT ── */
 .sale-layout {
   display: grid;
-  grid-template-columns: 1fr 480px;
+  grid-template-columns: 1fr 460px;
   gap: 20px;
   align-items: start;
 }
-/* LEFT — search + results */
-.search-wrap { position: relative; margin-bottom: 12px; }
+
+/* ── SEARCH ── */
+.search-wrap { position: relative; margin-bottom: 10px; }
 .search-wrap input { padding-left: 36px; }
-.search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:1rem; pointer-events:none; }
-.results-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+.search-icon { position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none; }
+.results-label { font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;padding:0 4px; }
+
+/* ── MATERIAL ROWS ── */
 .mat-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
   gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
 }
 .mat-row:last-child { border-bottom: none; }
 .mat-row:hover { background: var(--surface2); }
 .mat-info { flex: 1; min-width: 0; }
-.mat-row-name { font-weight: 600; font-size: .95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.mat-row-sub { font-size: .82rem; color: var(--muted); margin-top: 2px; }
-.mat-row-price { font-family: var(--mono); color: var(--accent); font-size: 1rem; white-space:nowrap; }
-.mat-stock-ok { color: var(--green); font-size: .78rem; }
-.mat-stock-no { color: var(--muted); font-size: .78rem; }
+.mat-row-name { font-weight: 600; font-size: .95rem; }
+.mat-row-cat { font-size: .78rem; color: var(--muted); margin-top: 1px; }
+.mat-row-price { font-family: var(--mono); color: var(--accent); font-size: .95rem; white-space: nowrap; }
+.mat-stock-ok { color: var(--green); font-size: .75rem; }
+.mat-stock-no { color: var(--muted); font-size: .75rem; }
 .add-btn {
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius);
-  padding: 6px 14px;
+  padding: 7px 16px;
   cursor: pointer;
   font-size: .85rem;
   font-weight: 600;
   white-space: nowrap;
-  transition: background .15s, border-color .15s;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s, color .15s;
 }
 .add-btn:hover { background: var(--accent); color: #111; border-color: var(--accent); }
 
-/* RIGHT — cart */
+/* ── CART PANEL ── */
 .cart-panel {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   position: sticky;
-  top: 20px;
+  top: 16px;
 }
 .cart-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 700; font-size: 1rem;
 }
 .cart-badge {
-  background: var(--accent);
-  color: #111;
-  border-radius: 20px;
-  padding: 2px 9px;
-  font-size: .8rem;
-  font-weight: 800;
+  background: var(--accent); color: #111;
+  border-radius: 20px; padding: 2px 9px;
+  font-size: .8rem; font-weight: 800;
 }
-.cart-items { padding: 8px 0; max-height: 340px; overflow-y: auto; }
-.cart-item {
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--border);
-}
-.cart-item:last-child { border-bottom: none; }
-.cart-item-name { font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
-.cart-item-controls { display: flex; align-items: center; gap: 8px; }
-.cart-item-controls input {
-  width: 80px;
-  padding: 5px 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: var(--font);
-  font-size: .9rem;
-}
-.cart-item-controls input:focus { outline: none; border-color: var(--accent); }
-.cart-item-unit { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
-.cart-item-sub { font-family: var(--mono); font-size: .9rem; font-weight: 700; color: var(--accent); margin-left: auto; }
-.cart-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:2px 4px; }
-.cart-remove:hover { color: var(--red); }
-.cart-dim { display:flex; align-items:center; gap:6px; }
-.cart-dim input { width: 80px; }
-.cart-dim span { font-size:.8rem; color:var(--muted); }
-.cart-empty { padding: 28px 20px; text-align: center; color: var(--muted); font-size:.875rem; }
+.cart-client { padding: 12px 18px; border-bottom: 1px solid var(--border); }
+.cart-client input { margin-bottom: 6px; }
+.cart-paid-row { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:.875rem; font-weight:600; }
 
-.cart-labor { padding: 12px 20px; border-top: 1px solid var(--border); }
-.cart-labor-title { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.cart-items { max-height: 300px; overflow-y: auto; }
+.cart-empty { padding: 24px 18px; text-align: center; color: var(--muted); font-size:.875rem; }
+
+.cart-item { padding: 10px 18px; border-bottom: 1px solid var(--border); }
+.cart-item-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:7px; gap:8px; }
+.cart-item-name { font-weight: 600; font-size: .9rem; }
+.cart-remove { background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0;flex-shrink:0; }
+.cart-remove:hover { color: var(--red); }
+.cart-item-bottom { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.cart-item-sub { font-family:var(--mono); font-weight:700; color:var(--accent); font-size:.95rem; white-space:nowrap; }
+.cart-price-hint { font-size:.75rem; color:var(--muted); margin-top:3px; }
+
+.cart-dim { display:flex; flex-wrap:wrap; align-items:center; gap:5px; font-size:.82rem; color:var(--muted); }
+.cart-dim input { width:70px; padding:5px 7px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--font); font-size:.9rem; }
+.cart-dim input:focus { outline:none; border-color:var(--accent); }
+.cart-qty input { width:80px; padding:5px 7px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--font); font-size:.9rem; }
+.cart-qty input:focus { outline:none; border-color:var(--accent); }
+.cart-qty { display:flex; align-items:center; gap:6px; font-size:.85rem; color:var(--muted); }
+
+.dim-area { font-size:.75rem; color:var(--muted); margin-top:2px; }
+
+.cart-labor { padding: 12px 18px; border-top: 1px solid var(--border); }
+.cart-labor-title { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px; }
 .cart-labor input { margin-bottom: 6px; }
 
-.cart-totals { padding: 12px 20px; border-top: 2px solid var(--border); }
-.cart-total-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:.875rem; }
+.cart-totals { padding: 10px 18px; border-top: 2px solid var(--border); }
+.cart-total-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; font-size:.875rem; }
 .cart-total-row.grand { font-size:1.2rem; font-weight:800; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
 .cart-total-row.grand span:last-child { font-family:var(--mono); color:var(--accent); }
 
-.cart-actions { padding: 12px 20px 16px; display:flex; flex-direction:column; gap:8px; }
-.cart-actions .btn { width: 100%; justify-content: center; }
+.cart-actions { padding: 10px 18px 14px; display:flex; flex-direction:column; gap:8px; }
+.cart-actions .btn { width:100%; justify-content:center; }
 
-/* client row at top of cart */
-.cart-client { padding: 14px 20px; border-bottom: 1px solid var(--border); }
-.cart-client input { margin-bottom: 6px; }
-.cart-paid-row { display:flex; align-items:center; gap:8px; margin-top:6px; }
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .sale-layout { grid-template-columns: 1fr; }
+
+  .cart-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    border-top: 2px solid var(--accent);
+    transform: translateY(calc(100% - 58px));
+    transition: transform .3s ease;
+    z-index: 100;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .cart-panel.open { transform: translateY(0); }
+  .cart-header { cursor: pointer; }
+  .cart-header::after { content: '▲'; font-size:.75rem; color:var(--muted); }
+  .cart-panel.open .cart-header::after { content: '▼'; }
+
+  .cart-bottom-spacer { height: 70px; }
+}
 </style>
 {% endblock %}
 
@@ -126,35 +141,34 @@
 </div>
 
 <div class="sale-layout">
-  <!-- LEFT: search + list -->
+  <!-- LEFT -->
   <div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div style="padding:16px 20px 12px;">
+    <div class="card" style="padding:14px 0 0;">
+      <div style="padding:0 16px 10px;">
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
           <input type="text" id="matSearch" class="form-control"
-                 placeholder="Buscar material por nome ou categoria..."
-                 oninput="filterMaterials(this.value)" autocomplete="off">
+                 placeholder="Buscar material..." oninput="filterMaterials(this.value)" autocomplete="off">
         </div>
-        <div class="results-label" id="resultsLabel">Todos os materiais</div>
+        <div class="results-label" id="resultsLabel"></div>
       </div>
       <div id="matList"></div>
     </div>
   </div>
 
   <!-- RIGHT: cart -->
-  <div class="cart-panel">
-    <div class="cart-header">
+  <div class="cart-panel" id="cartPanel">
+    <div class="cart-header" onclick="toggleCartMobile()">
       🛒 Carrinho
       <span class="cart-badge" id="cartCount">0</span>
     </div>
 
     <div class="cart-client">
-      <input type="text" id="clientName" class="form-control" placeholder="Nome do cliente *" style="margin-bottom:6px;">
+      <input type="text" id="clientName" class="form-control" placeholder="Nome do cliente *">
       <input type="text" id="noteField" class="form-control" placeholder="Observação (obra, endereço...)">
       <div class="cart-paid-row">
         <input type="checkbox" id="paidCheck" style="width:17px;height:17px;accent-color:var(--green);">
-        <label for="paidCheck" style="font-size:.875rem;font-weight:600;">Marcar como pago</label>
+        <label for="paidCheck">Marcar como pago</label>
       </div>
     </div>
 
@@ -187,13 +201,17 @@
     <div class="cart-actions">
       <button class="btn btn-primary" onclick="submitSale(false)">💾 Finalizar venda</button>
       <button class="btn btn-secondary" onclick="submitSale(true)">📋 Salvar como orçamento</button>
-      <button class="btn btn-secondary" onclick="compartilhar()" style="background:rgba(37,211,102,.12);border-color:#25d166;color:#25d166;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.858L0 24l6.293-1.51A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.375l-.36-.214-3.733.895.944-3.62-.234-.374A9.818 9.818 0 1112 21.818z"/></svg>
+      <button class="btn btn-secondary" onclick="compartilhar()"
+              style="background:rgba(37,211,102,.12);border-color:#25d166;color:#25d166;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.858L0 24l6.293-1.51A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a10 10 0 01-5.006-1.346l-.36-.214-3.733.923.955-3.643-.232-.373A9.973 9.973 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+        </svg>
         Compartilhar orçamento
       </button>
     </div>
   </div>
 </div>
+<div class="cart-bottom-spacer"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -205,22 +223,28 @@ const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
 function fmtBRL(v) {
   return 'R$ ' + v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 }
-
 function commaToPoint(el) {
   const pos = el.selectionStart;
   const had = el.value.includes(',');
   el.value = el.value.replace(',', '.');
-  if (had) el.setSelectionRange(pos, pos);
+  if (had) try { el.setSelectionRange(pos, pos); } catch(e){}
 }
 
-/* ---- SEARCH LIST ---- */
+/* ─── MOBILE CART TOGGLE ─── */
+function toggleCartMobile() {
+  if (window.innerWidth <= 768) {
+    document.getElementById('cartPanel').classList.toggle('open');
+  }
+}
+
+/* ─── MATERIAL LIST ─── */
 function filterMaterials(q) {
-  const query = q.trim().toLowerCase();
+  const query = (q||'').trim().toLowerCase();
   const filtered = query
     ? materials.filter(m => m.name.toLowerCase().includes(query) || m.category.toLowerCase().includes(query))
     : materials;
   document.getElementById('resultsLabel').textContent =
-    query ? `Resultados: ${filtered.length}` : `Todos os materiais (${materials.length})`;
+    query ? `${filtered.length} resultado${filtered.length!==1?'s':''}` : `${materials.length} materiais`;
   renderMatList(filtered);
 }
 
@@ -231,26 +255,29 @@ function renderMatList(list) {
     return;
   }
   el.innerHTML = list.map(m => {
-    const unitLabel = UNIT[m.unit] || m.unit;
-    const stock = m.qty_stock > 0
-      ? `<span class="mat-stock-ok">▲ ${Number.isInteger(m.qty_stock) ? m.qty_stock : m.qty_stock.toFixed(2)} ${unitLabel}</span>`
+    const u = UNIT[m.unit]||m.unit;
+    const inCart = items.some(i => i.material_id == m.id);
+    const stockHtml = m.qty_stock > 0
+      ? `<span class="mat-stock-ok">▲ ${Number.isInteger(m.qty_stock)?m.qty_stock:m.qty_stock.toFixed(2)} ${u}</span>`
       : `<span class="mat-stock-no">sem estoque</span>`;
-    return `<div class="mat-row">
+    return `<div class="mat-row" id="matrow-${m.id}">
       <div class="mat-info">
         <div class="mat-row-name">${m.name}</div>
-        <div class="mat-row-sub">${m.category} · ${stock}</div>
+        <div class="mat-row-cat">${m.category} · ${stockHtml}</div>
       </div>
-      <span class="mat-row-price">${fmtBRL(m.price)}/${unitLabel}</span>
-      <button class="add-btn" onclick="addItem(${m.id})">+ Carrinho</button>
+      <span class="mat-row-price">${fmtBRL(m.price)}/${u}</span>
+      <button class="add-btn${inCart?' in-cart':''}" onclick="addItem(${m.id})"
+              style="${inCart?'background:var(--accent);color:#111;border-color:var(--accent);':''}">
+        ${inCart?'✓ No carrinho':'+ Carrinho'}
+      </button>
     </div>`;
   }).join('');
 }
 
-/* ---- CART ---- */
+/* ─── CART ─── */
 function addItem(matId) {
   const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-  // if already in cart, just increment qty
   const existing = items.find(i => i.material_id == matId);
   if (existing) {
     if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
@@ -270,11 +297,18 @@ function addItem(matId) {
     subtotal: parseFloat(mat.price),
   });
   renderCart();
+  // on mobile, open cart when first item added
+  if (window.innerWidth <= 768 && items.length === 1) {
+    document.getElementById('cartPanel').classList.add('open');
+  }
 }
 
 function renderCart() {
   const el = document.getElementById('cartItems');
   document.getElementById('cartCount').textContent = items.length;
+
+  // refresh add buttons in list
+  filterMaterials(document.getElementById('matSearch').value);
 
   if (!items.length) {
     el.innerHTML = '<div class="cart-empty">Adicione materiais da lista</div>';
@@ -283,55 +317,44 @@ function renderCart() {
   }
 
   el.innerHTML = items.map(item => {
-    const unitLabel = UNIT[item.unit] || item.unit;
+    const u = UNIT[item.unit]||item.unit;
     let controls = '';
     if (item.unit === 'm2') {
-      controls = `
-        <div class="cart-dim">
-          <span>L:</span>
-          <input type="text" inputmode="decimal" value="${item.width}"
-            oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)">
-          <span>m × C:</span>
-          <input type="text" inputmode="decimal" value="${item.length}"
-            oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)">
-          <span>m</span>
-        </div>
-        <div class="dim-area" style="font-size:.78rem;color:var(--muted);margin-top:3px;">= ${(item.length*item.width).toFixed(3)} m²</div>`;
+      controls = `<div class="cart-dim">
+        <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
+          oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
+          oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+      </div>
+      <div class="dim-area">= ${(item.length*item.width).toFixed(3)} m²</div>`;
     } else if (item.unit === 'm3') {
-      controls = `
-        <div class="cart-dim">
-          <span>L:</span>
-          <input type="text" inputmode="decimal" value="${item.width}"
-            oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)">
-          <span>m × C:</span>
-          <input type="text" inputmode="decimal" value="${item.length}"
-            oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)">
-          <span>m × A:</span>
-          <input type="text" inputmode="decimal" value="${item.height}"
-            oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)">
-          <span>m</span>
-        </div>
-        <div class="dim-area" style="font-size:.78rem;color:var(--muted);margin-top:3px;">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
+      controls = `<div class="cart-dim">
+        <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
+          oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
+          oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        <span>× A:</span><input type="text" inputmode="decimal" value="${item.height}"
+          oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+      </div>
+      <div class="dim-area">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
     } else {
-      controls = `<div class="cart-item-controls">
-        <input type="${item.unit==='un'?'number':'text'}" inputmode="decimal"
-          value="${item.unit==='un'?item.qty:item.qty}"
-          step="${item.unit==='un'?'1':'0.01'}"
+      controls = `<div class="cart-qty">
+        <input type="text" inputmode="decimal" value="${item.qty}"
           oninput="updateQty(${item.id},this.value)" onkeyup="commaToPoint(this)">
-        <span class="cart-item-unit">${unitLabel}</span>
+        <span>${u}</span>
       </div>`;
     }
 
     return `<div class="cart-item" data-item-id="${item.id}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+      <div class="cart-item-top">
         <div class="cart-item-name">${item.material_name}</div>
         <button class="cart-remove" onclick="removeItem(${item.id})">✕</button>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:8px;">
+      <div class="cart-item-bottom">
         <div>${controls}</div>
         <div class="cart-item-sub orca-subtotal">${fmtBRL(item.subtotal)}</div>
       </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">${fmtBRL(item.unit_price)}/${unitLabel}</div>
+      <div class="cart-price-hint">${fmtBRL(item.unit_price)}/${u}</div>
     </div>`;
   }).join('');
 
@@ -339,38 +362,33 @@ function renderCart() {
 }
 
 function updateDim(id, field, val) {
-  const item = items.find(i => i.id === id);
-  if (!item) return;
+  const item = items.find(i => i.id===id); if (!item) return;
   item[field] = parseFloat(val.replace(',','.')) || 0;
   item.qty = item.length * item.width;
   item.subtotal = item.qty * item.unit_price;
   const row = document.querySelector(`[data-item-id="${id}"]`);
   if (row) {
     row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
-    const area = row.querySelector('.dim-area');
-    if (area) area.textContent = '= ' + item.qty.toFixed(3) + ' m²';
+    const a = row.querySelector('.dim-area'); if (a) a.textContent = '= '+item.qty.toFixed(3)+' m²';
   }
   updateTotals();
 }
 
 function updateDim3(id, field, val) {
-  const item = items.find(i => i.id === id);
-  if (!item) return;
+  const item = items.find(i => i.id===id); if (!item) return;
   item[field] = parseFloat(val.replace(',','.')) || 0;
   item.qty = item.length * item.width * item.height;
   item.subtotal = item.qty * item.unit_price;
   const row = document.querySelector(`[data-item-id="${id}"]`);
   if (row) {
     row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
-    const area = row.querySelector('.dim-area');
-    if (area) area.textContent = '= ' + item.qty.toFixed(3) + ' m³';
+    const a = row.querySelector('.dim-area'); if (a) a.textContent = '= '+item.qty.toFixed(3)+' m³';
   }
   updateTotals();
 }
 
 function updateQty(id, val) {
-  const item = items.find(i => i.id === id);
-  if (!item) return;
+  const item = items.find(i => i.id===id); if (!item) return;
   item.qty = parseFloat(String(val).replace(',','.')) || 0;
   item.subtotal = item.qty * item.unit_price;
   const row = document.querySelector(`[data-item-id="${id}"]`);
@@ -379,7 +397,7 @@ function updateQty(id, val) {
 }
 
 function removeItem(id) {
-  items = items.filter(i => i.id !== id);
+  items = items.filter(i => i.id!==id);
   renderCart();
 }
 
@@ -388,17 +406,13 @@ function getLabor() {
 }
 
 function updateTotals() {
-  const mat = items.reduce((s,i) => s + i.subtotal, 0);
+  const mat = items.reduce((s,i) => s+i.subtotal, 0);
   const labor = getLabor();
   document.getElementById('totMaterials').textContent = fmtBRL(mat);
-  const laborRow = document.getElementById('totLaborRow');
-  if (labor > 0) {
-    laborRow.style.display = 'flex';
-    document.getElementById('totLabor').textContent = fmtBRL(labor);
-  } else {
-    laborRow.style.display = 'none';
-  }
-  document.getElementById('totGrand').textContent = fmtBRL(mat + labor);
+  const lr = document.getElementById('totLaborRow');
+  if (labor > 0) { lr.style.display='flex'; document.getElementById('totLabor').textContent = fmtBRL(labor); }
+  else lr.style.display = 'none';
+  document.getElementById('totGrand').textContent = fmtBRL(mat+labor);
 }
 
 function compartilhar() {
@@ -406,72 +420,49 @@ function compartilhar() {
   const note = document.getElementById('noteField').value.trim();
   const labor = getLabor();
   const laborDesc = document.getElementById('laborDesc').value.trim();
-  const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
-
-  let lines = [`*Orçamento FAGAL*`];
+  let lines = ['*Orçamento FAGAL*'];
   if (note) lines.push(`📍 ${note}`);
-  lines.push(`👤 ${client}`);
-  lines.push('');
+  lines.push(`👤 ${client}`, '');
   lines.push('*Materiais:*');
-
   items.forEach(item => {
-    const u = UNIT[item.unit] || item.unit;
-    let qtyStr = '';
-    if (item.unit === 'm2') qtyStr = `${item.width}m × ${item.length}m = ${item.qty.toFixed(3)} m²`;
-    else if (item.unit === 'm3') qtyStr = `${item.width}m × ${item.length}m × ${item.height}m = ${item.qty.toFixed(3)} m³`;
-    else qtyStr = `${item.qty} ${u}`;
-    lines.push(`• ${item.material_name}: ${qtyStr} → ${fmtBRL(item.subtotal)}`);
+    const u = UNIT[item.unit]||item.unit;
+    let q = item.unit==='m2' ? `${item.width}×${item.length}m = ${item.qty.toFixed(3)} m²`
+          : item.unit==='m3' ? `${item.width}×${item.length}×${item.height}m = ${item.qty.toFixed(3)} m³`
+          : `${item.qty} ${u}`;
+    lines.push(`• ${item.material_name}: ${q} → ${fmtBRL(item.subtotal)}`);
   });
-
-  if (labor > 0) {
-    lines.push('');
-    lines.push(`🔧 Mão de obra${laborDesc ? ' (' + laborDesc + ')' : ''}: ${fmtBRL(labor)}`);
-  }
-
-  const matTotal = items.reduce((s,i) => s + i.subtotal, 0);
-  lines.push('');
-  lines.push(`*TOTAL: ${fmtBRL(matTotal + labor)}*`);
-
-  const text = encodeURIComponent(lines.join('
-'));
-  window.open(`https://wa.me/?text=${text}`, '_blank');
+  if (labor > 0) lines.push('', `🔧 Mão de obra${laborDesc?' ('+laborDesc+')':''}: ${fmtBRL(labor)}`);
+  const mat = items.reduce((s,i) => s+i.subtotal, 0);
+  lines.push('', `*TOTAL: ${fmtBRL(mat+labor)}*`);
+  window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
 async function submitSale(orcamento) {
   const client = document.getElementById('clientName').value.trim();
   if (!client) { alert('Informe o nome do cliente!'); document.getElementById('clientName').focus(); return; }
   if (!items.length) { alert('Adicione pelo menos um material!'); return; }
-
   const labor = getLabor();
   const payload = {
     client,
     note: document.getElementById('noteField').value.trim(),
     paid: orcamento ? false : document.getElementById('paidCheck').checked,
-    labor,
-    labor_desc: document.getElementById('laborDesc').value.trim(),
+    labor, labor_desc: document.getElementById('laborDesc').value.trim(),
     orcamento,
     items: items.map(i => ({
-      material_id: i.material_id,
-      material_name: i.material_name,
-      unit: i.unit,
-      qty: i.qty,
-      unit_price: i.unit_price,
-      subtotal: i.subtotal,
+      material_id: i.material_id, material_name: i.material_name,
+      unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
     }))
   };
-
-  const r = await fetch('/vendas/nova', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload),
-  });
+  const r = await fetch('/vendas/nova', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
   const data = await r.json();
   if (data.ok) window.location.href = `/vendas/${data.sale_id}`;
   else alert('Erro: ' + data.error);
 }
 
-// init
-filterMaterials('');
-renderCart();
+// ── INIT after DOM ready ──
+document.addEventListener('DOMContentLoaded', () => {
+  filterMaterials('');
+  renderCart();
+});
 </script>
 {% endblock %}
