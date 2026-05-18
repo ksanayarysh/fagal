@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAGAL PDV · Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&family=DM+Mono:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">FAGAL</div>
+    <div class="login-sub">Sistema de ponto de venda</div>
+
+    {% if error %}
+    <div style="background:rgba(231,76,60,.15);color:#e74c3c;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:.875rem;">
+      Senha incorreta.
+    </div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" name="password" class="form-control" autofocus placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Entrar</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

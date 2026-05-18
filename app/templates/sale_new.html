@@ -1,0 +1,281 @@
+{% extends "_base.html" %}
+{% block title %}Nova Venda{% endblock %}
+
+{% block head %}
+<style>
+.orca-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 36px;
+  gap: 10px;
+  align-items: start;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.orca-item-inner { display: flex; flex-direction: column; gap: 6px; }
+.orca-item-right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.orca-subtotal { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--accent); }
+.dim-row { display: flex; gap: 6px; align-items: center; font-size:.82rem; color:var(--muted); }
+.dim-row input { width: 72px; }
+.qty-row { display: flex; gap: 6px; align-items: center; }
+.qty-row input { width: 90px; }
+.mat-name { font-weight: 600; font-size: .92rem; }
+.mat-unit { font-family: var(--mono); font-size: .75rem; }
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px;
+  align-self: flex-start;
+}
+.remove-btn:hover { color: var(--red); }
+.total-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 2px solid var(--border);
+  margin-top: 8px;
+}
+.total-label { color: var(--muted); font-size: .85rem; }
+.total-val { font-family: var(--mono); font-size: 1.6rem; font-weight: 800; color: var(--accent); }
+
+.material-select-wrap {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.material-select-wrap select { flex: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Nova venda</div>
+    <div class="page-subtitle">Monte o orçamento e registre</div>
+  </div>
+  <a href="/vendas" class="btn btn-secondary">← Voltar</a>
+</div>
+
+<div class="card mb-16">
+  <div class="grid-2">
+    <div class="form-group">
+      <label class="form-label">Cliente *</label>
+      <input type="text" id="clientName" class="form-control" placeholder="Nome do cliente">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação</label>
+      <input type="text" id="noteField" class="form-control" placeholder="Ex: Portão da garagem, Rua X...">
+    </div>
+  </div>
+</div>
+
+<div class="card mb-16">
+  <div style="font-weight:700;margin-bottom:14px;">Materiais</div>
+
+  <div class="material-select-wrap">
+    <select id="materialPicker" class="form-control">
+      <option value="">— Selecionar material —</option>
+      {% set ns = namespace(last_cat="") %}
+      {% for m in materials %}
+        {% if m.category != ns.last_cat %}
+          {% if ns.last_cat %}</optgroup>{% endif %}
+          <optgroup label="{{ m.category }}">
+          {% set ns.last_cat = m.category %}
+        {% endif %}
+        <option value="{{ m.id }}"
+                data-name="{{ m.name }}"
+                data-unit="{{ m.unit }}"
+                data-price="{{ m.price }}">
+          {{ m.name }} — R$ {{ "%.2f"|format(m.price) }}/{{ m.unit.replace('m2','m²').replace('m3','m³') }}
+        </option>
+      {% endfor %}
+      {% if ns.last_cat %}</optgroup>{% endif %}
+    </select>
+    <button class="btn btn-secondary" onclick="addItem()">+ Adicionar</button>
+  </div>
+
+  <div id="itemsList"></div>
+
+  <div class="total-bar">
+    <span class="total-label">TOTAL DO ORÇAMENTO</span>
+    <span class="total-val" id="grandTotal">R$ 0,00</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="flex items-center gap-8 mb-16">
+    <input type="checkbox" id="paidCheck" style="width:18px;height:18px;accent-color:var(--green);">
+    <label for="paidCheck" style="font-weight:600;">Marcar como pago</label>
+  </div>
+  <button class="btn btn-primary" onclick="submitSale()" style="min-width:160px;">
+    💾 Registrar venda
+  </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const materials = {{ materials | tojson }};
+let items = [];
+
+// unit display
+const UNIT_LABEL = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
+const NEEDS_DIM = {m2: true, m3: false}; // m2 = L×W, m3 = L×W×H would be complex, keep as qty for now
+
+function fmtBRL(v) {
+  return 'R$ ' + v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+
+function addItem() {
+  const sel = document.getElementById('materialPicker');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+
+  const mat = materials.find(m => m.id == opt.value);
+  if (!mat) return;
+
+  const item = {
+    id: Date.now(),
+    material_id: mat.id,
+    material_name: mat.name,
+    unit: mat.unit,
+    unit_price: parseFloat(mat.price),
+    length: 1,
+    width: 1,
+    qty: 1,
+    subtotal: parseFloat(mat.price),
+  };
+  items.push(item);
+  renderItems();
+  sel.value = '';
+}
+
+function renderItems() {
+  const el = document.getElementById('itemsList');
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px 0;font-size:.875rem;">Nenhum material adicionado</div>';
+    updateTotal();
+    return;
+  }
+
+  el.innerHTML = items.map(item => {
+    const needsDim = item.unit === 'm2';
+    const needsLinear = item.unit === 'm';
+    const label = UNIT_LABEL[item.unit] || item.unit;
+
+    let qtyHtml = '';
+    if (needsDim) {
+      qtyHtml = `
+        <div class="dim-row">
+          <span>Largura:</span>
+          <input type="number" class="form-control" step="0.01" min="0.01" value="${item.width}"
+                 oninput="updateDim(${item.id},'width',this.value)"> m
+          <span style="margin-left:4px;">× Comprimento:</span>
+          <input type="number" class="form-control" step="0.01" min="0.01" value="${item.length}"
+                 oninput="updateDim(${item.id},'length',this.value)"> m
+        </div>
+        <div style="font-size:.8rem;color:var(--muted);">= ${(item.length * item.width).toFixed(3)} m²</div>
+      `;
+    } else {
+      qtyHtml = `
+        <div class="qty-row">
+          <input type="number" class="form-control" step="${item.unit==='un'?'1':'0.01'}"
+                 min="${item.unit==='un'?'1':'0.01'}" value="${item.qty}"
+                 oninput="updateQty(${item.id},this.value)">
+          <span class="mat-unit">${label}</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="orca-item">
+        <div class="orca-item-inner">
+          <div class="mat-name">${item.material_name}</div>
+          <div style="font-size:.8rem;color:var(--muted);">R$ ${item.unit_price.toFixed(2).replace('.',',')} / ${label}</div>
+          ${qtyHtml}
+        </div>
+        <div class="orca-item-right">
+          <div class="orca-subtotal">${fmtBRL(item.subtotal)}</div>
+        </div>
+        <button class="remove-btn" onclick="removeItem(${item.id})">✕</button>
+      </div>
+    `;
+  }).join('');
+
+  updateTotal();
+}
+
+function updateDim(id, field, val) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item[field] = parseFloat(val) || 0;
+  item.qty = item.length * item.width;
+  item.subtotal = item.qty * item.unit_price;
+  renderItems();
+}
+
+function updateQty(id, val) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item.qty = parseFloat(val) || 0;
+  item.subtotal = item.qty * item.unit_price;
+  renderItems();
+}
+
+function removeItem(id) {
+  items = items.filter(i => i.id !== id);
+  renderItems();
+}
+
+function updateTotal() {
+  const total = items.reduce((s, i) => s + i.subtotal, 0);
+  document.getElementById('grandTotal').textContent = fmtBRL(total);
+}
+
+async function submitSale() {
+  const client = document.getElementById('clientName').value.trim();
+  if (!client) { alert('Informe o nome do cliente!'); return; }
+  if (!items.length) { alert('Adicione pelo menos um material!'); return; }
+
+  const paid = document.getElementById('paidCheck').checked;
+  const note = document.getElementById('noteField').value.trim();
+
+  const payload = {
+    client,
+    note,
+    paid,
+    items: items.map(i => ({
+      material_id: i.material_id,
+      material_name: i.material_name,
+      unit: i.unit,
+      qty: i.qty,
+      unit_price: i.unit_price,
+      subtotal: i.subtotal,
+    }))
+  };
+
+  const r = await fetch('/vendas/nova', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload),
+  });
+  const data = await r.json();
+  if (data.ok) {
+    window.location.href = `/vendas/${data.sale_id}`;
+  } else {
+    alert('Erro: ' + data.error);
+  }
+}
+
+// init
+renderItems();
+</script>
+{% endblock %}

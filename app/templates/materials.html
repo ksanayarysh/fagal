@@ -1,0 +1,143 @@
+{% extends "_base.html" %}
+{% block title %}Materiais{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Materiais</div>
+    <div class="page-subtitle">Preços e unidades de medida</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addModal')">+ Adicionar</button>
+</div>
+
+{% if cats %}
+  {% for cat, items in cats.items() %}
+  <div class="cat-group">
+    <div class="cat-title">{{ cat }}</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Unidade</th>
+            <th>Preço unitário</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in items %}
+          <tr>
+            <td><strong>{{ m.name }}</strong></td>
+            <td><span class="unit-badge">{{ units[m.unit] }}</span></td>
+            <td class="text-mono">R$ {{ "%.2f"|format(m.price) }}</td>
+            <td class="text-right" style="white-space:nowrap;">
+              <button class="btn btn-secondary btn-sm" onclick='openEdit({{ m | tojson }})'>Editar</button>
+              <form method="post" action="/materiais/{{ m.id }}/delete" style="display:inline"
+                    onsubmit="return confirm('Remover {{ m.name }}?')">
+                <button type="submit" class="btn btn-danger btn-sm">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card" style="text-align:center;padding:48px;color:var(--muted);">
+    Nenhum material cadastrado ainda.<br>
+    <button class="btn btn-primary mt-16" onclick="openModal('addModal')">Adicionar primeiro material</button>
+  </div>
+{% endif %}
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">Novo material</div>
+    <form method="post" action="/materiais/add">
+      <div class="grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nome</label>
+          <input name="name" class="form-control" required placeholder="Ex: Chapa de aço 1mm">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <input name="category" class="form-control" required placeholder="Ex: Chapas, Tubos, Areia...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidade</label>
+          <select name="unit" class="form-control" required>
+            {% for val, label in unit_labels %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço (R$)</label>
+          <input name="price" type="number" step="0.01" min="0" class="form-control" required placeholder="0.00">
+        </div>
+      </div>
+      <div class="flex gap-8 mt-8">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Editar material</div>
+    <form method="post" id="editForm">
+      <div class="grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Nome</label>
+          <input name="name" id="editName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <input name="category" id="editCategory" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidade</label>
+          <select name="unit" id="editUnit" class="form-control">
+            {% for val, label in unit_labels %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço (R$)</label>
+          <input name="price" id="editPrice" type="number" step="0.01" min="0" class="form-control" required>
+        </div>
+      </div>
+      <div class="flex gap-8 mt-8">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+function openEdit(m) {
+  document.getElementById('editForm').action = `/materiais/${m.id}/edit`;
+  document.getElementById('editName').value = m.name;
+  document.getElementById('editCategory').value = m.category;
+  document.getElementById('editUnit').value = m.unit;
+  document.getElementById('editPrice').value = m.price;
+  openModal('editModal');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FAGAL{% endblock %} · FAGAL PDV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">FAGAL <span>PDV</span></div>
+  <a href="/vendas" class="{% if active == 'vendas' %}active{% endif %}">Vendas</a>
+  <a href="/vendas/nova" class="{% if active == 'nova' %}active{% endif %}">+ Nova venda</a>
+  <a href="/materiais" class="{% if active == 'materiais' %}active{% endif %}">Materiais</a>
+  <div class="nav-spacer"></div>
+  <a href="/logout" class="nav-logout">Sair</a>
+</nav>
+<div class="main">
+  {% block content %}{% endblock %}
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>
