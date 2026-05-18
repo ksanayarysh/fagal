@@ -31,7 +31,10 @@
             <td><span class="unit-badge">{{ units[m.unit] }}</span></td>
             <td class="text-mono">R$ {{ "%.2f"|format(m.price) }}</td>
             <td class="text-right" style="white-space:nowrap;">
-              <button class="btn btn-secondary btn-sm" onclick='openEdit({{ m | tojson }})'>Editar</button>
+              <button class="btn btn-secondary btn-sm"
+                data-id="{{ m.id }}" data-name="{{ m.name }}" data-cat="{{ m.category }}"
+                data-unit="{{ m.unit }}" data-price="{{ m.price }}"
+                onclick='openEdit(this)'>Editar</button>
               <form method="post" action="/materiais/{{ m.id }}/delete" style="display:inline"
                     onsubmit="return confirm('Remover {{ m.name }}?')">
                 <button type="submit" class="btn btn-danger btn-sm">✕</button>
@@ -131,12 +134,12 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
 
-function openEdit(m) {
-  document.getElementById('editForm').action = `/materiais/${m.id}/edit`;
-  document.getElementById('editName').value = m.name;
-  document.getElementById('editCategory').value = m.category;
-  document.getElementById('editUnit').value = m.unit;
-  document.getElementById('editPrice').value = m.price;
+function openEdit(btn) {
+  document.getElementById('editForm').action = `/materiais/${btn.dataset.id}/edit`;
+  document.getElementById('editName').value = btn.dataset.name;
+  document.getElementById('editCategory').value = btn.dataset.cat;
+  document.getElementById('editUnit').value = btn.dataset.unit;
+  document.getElementById('editPrice').value = btn.dataset.price;
   openModal('editModal');
 }
 </script>
