@@ -5,7 +5,7 @@
 <style>
 .sale-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 480px;
   gap: 20px;
   align-items: start;
 }
@@ -93,7 +93,7 @@
 .cart-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:2px 4px; }
 .cart-remove:hover { color: var(--red); }
 .cart-dim { display:flex; align-items:center; gap:6px; }
-.cart-dim input { width: 68px; }
+.cart-dim input { width: 80px; }
 .cart-dim span { font-size:.8rem; color:var(--muted); }
 .cart-empty { padding: 28px 20px; text-align: center; color: var(--muted); font-size:.875rem; }
 
@@ -187,6 +187,10 @@
     <div class="cart-actions">
       <button class="btn btn-primary" onclick="submitSale(false)">💾 Finalizar venda</button>
       <button class="btn btn-secondary" onclick="submitSale(true)">📋 Salvar como orçamento</button>
+      <button class="btn btn-secondary" onclick="compartilhar()" style="background:rgba(37,211,102,.12);border-color:#25d166;color:#25d166;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.858L0 24l6.293-1.51A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.375l-.36-.214-3.733.895.944-3.62-.234-.374A9.818 9.818 0 1112 21.818z"/></svg>
+        Compartilhar orçamento
+      </button>
     </div>
   </div>
 </div>
@@ -395,6 +399,42 @@ function updateTotals() {
     laborRow.style.display = 'none';
   }
   document.getElementById('totGrand').textContent = fmtBRL(mat + labor);
+}
+
+function compartilhar() {
+  const client = document.getElementById('clientName').value.trim() || 'Cliente';
+  const note = document.getElementById('noteField').value.trim();
+  const labor = getLabor();
+  const laborDesc = document.getElementById('laborDesc').value.trim();
+  const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
+
+  let lines = [`*Orçamento FAGAL*`];
+  if (note) lines.push(`📍 ${note}`);
+  lines.push(`👤 ${client}`);
+  lines.push('');
+  lines.push('*Materiais:*');
+
+  items.forEach(item => {
+    const u = UNIT[item.unit] || item.unit;
+    let qtyStr = '';
+    if (item.unit === 'm2') qtyStr = `${item.width}m × ${item.length}m = ${item.qty.toFixed(3)} m²`;
+    else if (item.unit === 'm3') qtyStr = `${item.width}m × ${item.length}m × ${item.height}m = ${item.qty.toFixed(3)} m³`;
+    else qtyStr = `${item.qty} ${u}`;
+    lines.push(`• ${item.material_name}: ${qtyStr} → ${fmtBRL(item.subtotal)}`);
+  });
+
+  if (labor > 0) {
+    lines.push('');
+    lines.push(`🔧 Mão de obra${laborDesc ? ' (' + laborDesc + ')' : ''}: ${fmtBRL(labor)}`);
+  }
+
+  const matTotal = items.reduce((s,i) => s + i.subtotal, 0);
+  lines.push('');
+  lines.push(`*TOTAL: ${fmtBRL(matTotal + labor)}*`);
+
+  const text = encodeURIComponent(lines.join('
+'));
+  window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 async function submitSale(orcamento) {
