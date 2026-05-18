@@ -182,7 +182,7 @@ function renderItems() {
           <input type="text" inputmode="decimal" class="form-control" value="${item.length}"
                  oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"> m
         </div>
-        <div style="font-size:.8rem;color:var(--muted);">= ${(item.length * item.width).toFixed(3)} m²</div>
+        <div class="dim-area" style="font-size:.8rem;color:var(--muted);">= ${(item.length * item.width).toFixed(3)} m²</div>
       `;
     } else {
       qtyHtml = `
@@ -196,7 +196,7 @@ function renderItems() {
     }
 
     return `
-      <div class="orca-item">
+      <div class="orca-item" data-item-id="${item.id}">
         <div class="orca-item-inner">
           <div class="mat-name">${item.material_name}</div>
           <div style="font-size:.8rem;color:var(--muted);">R$ ${item.unit_price.toFixed(2).replace('.',',')} / ${label}</div>
@@ -214,25 +214,36 @@ function renderItems() {
 }
 
 function commaToPoint(el) {
-  const v = el.value.replace(',', '.');
-  if (el.value !== v) { el.value = v; el.dispatchEvent(new Event('input')); }
+  const pos = el.selectionStart;
+  const hadComma = el.value.includes(',');
+  el.value = el.value.replace(',', '.');
+  if (hadComma) el.setSelectionRange(pos, pos);
 }
 
 function updateDim(id, field, val) {
   const item = items.find(i => i.id === id);
   if (!item) return;
-  item[field] = parseFloat(val) || 0;
+  item[field] = parseFloat(val.replace(',','.')) || 0;
   item.qty = item.length * item.width;
   item.subtotal = item.qty * item.unit_price;
-  renderItems();
+  // update only subtotal display, not full re-render
+  const row = document.querySelector(`[data-item-id="${id}"]`);
+  if (row) {
+    row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
+    const area = row.querySelector('.dim-area');
+    if (area) area.textContent = '= ' + item.qty.toFixed(3) + ' m²';
+  }
+  updateTotal();
 }
 
 function updateQty(id, val) {
   const item = items.find(i => i.id === id);
   if (!item) return;
-  item.qty = parseFloat(val) || 0;
+  item.qty = parseFloat(val.replace(',','.')) || 0;
   item.subtotal = item.qty * item.unit_price;
-  renderItems();
+  const row = document.querySelector(`[data-item-id="${id}"]`);
+  if (row) row.querySelector('.orca-subtotal').textContent = fmtBRL(item.subtotal);
+  updateTotal();
 }
 
 function removeItem(id) {
