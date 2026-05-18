@@ -80,33 +80,42 @@
 <div class="card mb-16">
   <div style="font-weight:700;margin-bottom:14px;">Materiais</div>
 
-  <div class="material-select-wrap">
-    <select id="materialPicker" class="form-control">
-      <option value="">— Selecionar material —</option>
-      {% set ns = namespace(last_cat="") %}
-      {% for m in materials %}
-        {% if m.category != ns.last_cat %}
-          {% if ns.last_cat %}</optgroup>{% endif %}
-          <optgroup label="{{ m.category }}">
-          {% set ns.last_cat = m.category %}
-        {% endif %}
-        <option value="{{ m.id }}"
-                data-name="{{ m.name }}"
-                data-unit="{{ m.unit }}"
-                data-price="{{ m.price }}">
-          {{ m.name }} — R$ {{ "%.2f"|format(m.price) }}/{{ m.unit.replace('m2','m²').replace('m3','m³') }}
-        </option>
-      {% endfor %}
-      {% if ns.last_cat %}</optgroup>{% endif %}
-    </select>
-    <button class="btn btn-secondary" onclick="addItem()">+ Adicionar</button>
+  <div style="margin-bottom:12px;">
+    <input type="text" id="matSearch" class="form-control"
+           placeholder="Buscar material..." oninput="filterMaterials(this.value)" autocomplete="off">
   </div>
+  <div id="matGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:16px;max-height:320px;overflow-y:auto;"></div>
 
   <div id="itemsList"></div>
 
-  <div class="total-bar">
-    <span class="total-label">TOTAL DO ORÇAMENTO</span>
-    <span class="total-val" id="grandTotal">R$ 0,00</span>
+  <div class="total-bar" style="flex-direction:column;align-items:flex-end;gap:6px;">
+    <div style="display:flex;gap:16px;align-items:center;">
+      <span class="total-label">Materiais</span>
+      <span class="text-mono" id="materialsTotal" style="font-size:1.1rem;">R$ 0,00</span>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;" id="laborRow" style="display:none;">
+      <span class="total-label">Mão de obra</span>
+      <span class="text-mono" id="laborTotal" style="font-size:1.1rem;">R$ 0,00</span>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
+      <span class="total-label">TOTAL</span>
+      <span class="total-val" id="grandTotal">R$ 0,00</span>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-16">
+  <div style="font-weight:700;margin-bottom:14px;">Mão de obra</div>
+  <div class="grid-2">
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <input type="text" id="laborDesc" class="form-control" placeholder="Ex: Instalação, solda, pintura...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Valor (R$)</label>
+      <input type="text" inputmode="decimal" id="laborVal" class="form-control" placeholder="0,00"
+             oninput="updateLaborTotal()" onkeyup="commaToPoint(this)">
+    </div>
   </div>
 </div>
 
@@ -134,14 +143,9 @@ function fmtBRL(v) {
   return 'R$ ' + v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
 }
 
-function addItem() {
-  const sel = document.getElementById('materialPicker');
-  const opt = sel.options[sel.selectedIndex];
-  if (!opt.value) return;
-
-  const mat = materials.find(m => m.id == opt.value);
+function addItem(matId) {
+  const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-
   const item = {
     id: Date.now(),
     material_id: mat.id,
@@ -155,7 +159,41 @@ function addItem() {
   };
   items.push(item);
   renderItems();
-  sel.value = '';
+  // clear search
+  document.getElementById('matSearch').value = '';
+  filterMaterials('');
+}
+
+function filterMaterials(q) {
+  const grid = document.getElementById('matGrid');
+  const query = q.trim().toLowerCase();
+  const filtered = query
+    ? materials.filter(m => m.name.toLowerCase().includes(query) || m.category.toLowerCase().includes(query))
+    : materials;
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:.875rem;padding:8px;">Nenhum material encontrado</div>';
+    return;
+  }
+
+  const UNIT = {m2:'m²',m3:'m³',m:'m',un:'un',kg:'kg'};
+  grid.innerHTML = filtered.map(m => {
+    const stock = m.qty_stock > 0
+      ? `<span style="color:var(--green);font-size:.78rem;">▲ ${m.qty_stock % 1 === 0 ? m.qty_stock : m.qty_stock.toFixed(2)} ${UNIT[m.unit]||m.unit}</span>`
+      : `<span style="color:var(--muted);font-size:.78rem;">sem estoque</span>`;
+    return `<div onclick="addItem(${m.id})" style="
+        background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+        padding:10px 12px;cursor:pointer;transition:border-color .15s;"
+        onmouseover="this.style.borderColor='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-weight:600;font-size:.9rem;margin-bottom:3px;">${m.name}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:var(--mono);color:var(--accent);font-size:.95rem;">R$ ${m.price.toFixed(2).replace('.',',')}/${UNIT[m.unit]||m.unit}</span>
+        ${stock}
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">${m.category}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderItems() {
@@ -251,9 +289,27 @@ function removeItem(id) {
   renderItems();
 }
 
+function getLaborVal() {
+  return parseFloat((document.getElementById('laborVal').value||'0').replace(',','.')) || 0;
+}
+
+function updateLaborTotal() {
+  const labor = getLaborVal();
+  const laborRow = document.getElementById('laborRow');
+  if (labor > 0) {
+    laborRow.style.display = 'flex';
+    document.getElementById('laborTotal').textContent = fmtBRL(labor);
+  } else {
+    laborRow.style.display = 'none';
+  }
+  updateTotal();
+}
+
 function updateTotal() {
-  const total = items.reduce((s, i) => s + i.subtotal, 0);
-  document.getElementById('grandTotal').textContent = fmtBRL(total);
+  const matTotal = items.reduce((s, i) => s + i.subtotal, 0);
+  const labor = getLaborVal();
+  document.getElementById('materialsTotal').textContent = fmtBRL(matTotal);
+  document.getElementById('grandTotal').textContent = fmtBRL(matTotal + labor);
 }
 
 async function submitSale() {
@@ -264,10 +320,15 @@ async function submitSale() {
   const paid = document.getElementById('paidCheck').checked;
   const note = document.getElementById('noteField').value.trim();
 
+  const labor = getLaborVal();
+  const laborDesc = document.getElementById('laborDesc').value.trim();
+
   const payload = {
     client,
     note,
     paid,
+    labor,
+    labor_desc: laborDesc,
     items: items.map(i => ({
       material_id: i.material_id,
       material_name: i.material_name,
@@ -293,5 +354,6 @@ async function submitSale() {
 
 // init
 renderItems();
+filterMaterials('');
 </script>
 {% endblock %}

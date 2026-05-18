@@ -1,0 +1,184 @@
+{% extends "_base.html" %}
+{% block title %}Estoque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Estoque</div>
+    <div class="page-subtitle">Saldo atual e compras</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('buyModal')">+ Registrar compra</button>
+</div>
+
+<!-- STOCK TABLE -->
+<div class="card mb-16">
+  <div style="font-weight:700;margin-bottom:14px;">Saldo atual por material</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th>Categoria</th>
+          <th>Unidade</th>
+          <th>Em estoque</th>
+          <th>Preço unit.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in materials %}
+        <tr>
+          <td><strong>{{ m.name }}</strong></td>
+          <td class="text-muted">{{ m.category }}</td>
+          <td><span class="unit-badge">{{ m.unit_label }}</span></td>
+          <td>
+            <span class="text-mono" style="font-size:1.05rem;
+              {% if m.qty_stock <= 0 %}color:var(--red){% elif m.qty_stock < 5 %}color:var(--accent){% else %}color:var(--green){% endif %}">
+              {{ "%.3f"|format(m.qty_stock) if m.unit not in ['un'] else m.qty_stock|int }}
+            </span>
+            <span class="text-muted" style="font-size:.85rem;"> {{ m.unit_label }}</span>
+          </td>
+          <td class="text-mono">R$ {{ "%.2f"|format(m.price) }}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm"
+              data-id="{{ m.id }}" data-name="{{ m.name }}"
+              data-stock="{{ m.qty_stock }}" data-unit="{{ m.unit_label }}"
+              onclick="openAdjust(this)">Ajustar</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PURCHASE HISTORY -->
+{% if purchases %}
+<div class="card">
+  <div style="font-weight:700;margin-bottom:14px;">Histórico de compras</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th>Qtd</th>
+          <th>Custo unit.</th>
+          <th>Total</th>
+          <th>Fornecedor</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in purchases %}
+        <tr>
+          <td><strong>{{ p.material_name }}</strong></td>
+          <td class="text-mono">{{ "%.3f"|format(p.qty) }} {{ p.unit_label }}</td>
+          <td class="text-mono">R$ {{ "%.2f"|format(p.unit_cost) }}</td>
+          <td class="text-mono"><strong>R$ {{ "%.2f"|format(p.total_cost) }}</strong></td>
+          <td class="text-muted">{{ p.supplier or '—' }}</td>
+          <td class="text-muted" style="font-size:.85rem;white-space:nowrap;">
+            {{ p.created_at.strftime('%d/%m/%Y %H:%M') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- BUY MODAL -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal">
+    <div class="modal-title">Registrar compra</div>
+    <form method="post" action="/estoque/compra">
+      <div class="form-group">
+        <label class="form-label">Material *</label>
+        <select name="material_id" class="form-control" required>
+          <option value="">— Selecionar —</option>
+          {% for m in materials %}
+          <option value="{{ m.id }}">{{ m.name }} ({{ m.unit_label }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Quantidade *</label>
+          <input name="qty" type="text" inputmode="decimal" class="form-control" required placeholder="0.00" oninput="calcTotal()" onkeyup="commaFix(this)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Custo unitário (R$) *</label>
+          <input name="unit_cost" type="text" inputmode="decimal" class="form-control" required placeholder="0.00" oninput="calcTotal()" onkeyup="commaFix(this)">
+        </div>
+      </div>
+      <div class="form-group" style="background:var(--surface2);border-radius:var(--radius);padding:10px 14px;">
+        <span class="text-muted" style="font-size:.85rem;">Total da compra:</span>
+        <span id="buyTotal" class="text-mono" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-left:8px;">R$ 0,00</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fornecedor</label>
+        <input name="supplier" type="text" class="form-control" placeholder="Nome do fornecedor">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observação</label>
+        <input name="note" type="text" class="form-control" placeholder="Opcional">
+      </div>
+      <div class="flex gap-8 mt-8">
+        <button type="submit" class="btn btn-primary">Registrar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('buyModal')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ADJUST MODAL -->
+<div class="modal-overlay" id="adjustModal">
+  <div class="modal">
+    <div class="modal-title">Ajustar estoque</div>
+    <p id="adjustMatName" style="color:var(--muted);margin-bottom:16px;"></p>
+    <form method="post" action="/estoque/ajuste">
+      <input type="hidden" name="material_id" id="adjustMatId">
+      <div class="form-group">
+        <label class="form-label">Quantidade real em estoque</label>
+        <input name="qty" id="adjustQty" type="text" inputmode="decimal" class="form-control" required onkeyup="commaFix(this)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motivo</label>
+        <input name="note" type="text" class="form-control" placeholder="Ex: Contagem física, perda...">
+      </div>
+      <div class="flex gap-8 mt-8">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('adjustModal')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+function commaFix(el) {
+  el.value = el.value.replace(',', '.');
+}
+
+function calcTotal() {
+  const qty = parseFloat(document.querySelector('[name=qty]').value) || 0;
+  const cost = parseFloat(document.querySelector('[name=unit_cost]').value) || 0;
+  const total = qty * cost;
+  document.getElementById('buyTotal').textContent = 'R$ ' + total.toFixed(2).replace('.',',');
+}
+
+function openAdjust(btn) {
+  document.getElementById('adjustMatId').value = btn.dataset.id;
+  document.getElementById('adjustMatName').textContent = btn.dataset.name + ' — atual: ' + btn.dataset.stock + ' ' + btn.dataset.unit;
+  document.getElementById('adjustQty').value = btn.dataset.stock;
+  openModal('adjustModal');
+}
+</script>
+{% endblock %}
