@@ -54,6 +54,8 @@ async def create_sale(request: Request):
     labor = float(body.get("labor", 0) or 0)
     labor_desc = body.get("labor_desc", "").strip()
     orcamento = body.get("orcamento", False)
+    phone = body.get("phone", "").strip()
+    address = body.get("address", "").strip()
 
     if not client or not items:
         return JSONResponse({"error": "Dados incompletos"}, status_code=400)
@@ -66,9 +68,9 @@ async def create_sale(request: Request):
     pool = request.app.state.db
     async with pool.acquire() as conn:
         sale_id = await conn.fetchval(
-            """INSERT INTO sales (client_name, note, labor, labor_desc, total, paid, is_orcamento)
-               VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id""",
-            client, note or None, round(labor, 2), labor_desc or None, total, is_paid, orcamento
+            """INSERT INTO sales (client_name, note, phone, address, labor, labor_desc, total, paid, is_orcamento)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id""",
+            client, note or None, phone or None, address or None, round(labor, 2), labor_desc or None, total, is_paid, orcamento
         )
         for item in items:
             mid = item.get("material_id")
@@ -105,6 +107,7 @@ async def sale_detail(request: Request, sale_id: int):
     items = await pool.fetch("SELECT * FROM sale_items WHERE sale_id=$1", sale_id)
     sale_d = dict(sale)
     sale_d["labor"] = float(sale_d.get("labor") or 0)
+    sale_d["total"] = float(sale_d.get("total") or 0)
     return templates.TemplateResponse("sale_detail.html", {
         "request": request,
         "sale": sale_d,

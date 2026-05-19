@@ -14,8 +14,14 @@
   <div class="card">
     <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Cliente</div>
     <div style="font-size:1.2rem;font-weight:700;">{{ sale.client_name }}</div>
+    {% if sale.phone %}
+    <div style="margin-top:6px;font-size:.875rem;">📞 {{ sale.phone }}</div>
+    {% endif %}
+    {% if sale.address %}
+    <div style="margin-top:4px;font-size:.875rem;">📍 {{ sale.address }}</div>
+    {% endif %}
     {% if sale.note %}
-    <div style="color:var(--muted);margin-top:6px;font-size:.875rem;">{{ sale.note }}</div>
+    <div style="color:var(--muted);margin-top:4px;font-size:.875rem;">{{ sale.note }}</div>
     {% endif %}
   </div>
   <div class="card">

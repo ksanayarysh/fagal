@@ -128,6 +128,14 @@
 
   .cart-bottom-spacer { height: 70px; }
 }
+.cat-pills { display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 10px; }
+.cat-pill {
+  padding:5px 14px; border-radius:20px; font-size:.8rem; font-weight:600;
+  border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+  cursor:pointer; transition:all .15s;
+}
+.cat-pill:hover { border-color:var(--accent); color:var(--accent); }
+.cat-pill.active { background:var(--accent); color:#111; border-color:var(--accent); }
 </style>
 {% endblock %}
 
@@ -152,6 +160,7 @@
         </div>
         <div class="results-label" id="resultsLabel"></div>
       </div>
+      <div class="cat-pills" id="catPills"></div>
       <div id="matList"></div>
     </div>
   </div>
@@ -165,7 +174,9 @@
 
     <div class="cart-client">
       <input type="text" id="clientName" class="form-control" placeholder="Nome do cliente *">
-      <input type="text" id="noteField" class="form-control" placeholder="Observação (obra, endereço...)">
+      <input type="text" id="phoneField" class="form-control" placeholder="Telefone">
+      <input type="text" id="addressField" class="form-control" placeholder="Endereço da obra">
+      <input type="text" id="noteField" class="form-control" placeholder="Observação">
       <div class="cart-paid-row">
         <input type="checkbox" id="paidCheck" style="width:17px;height:17px;accent-color:var(--green);">
         <label for="paidCheck">Marcar como pago</label>
@@ -218,6 +229,7 @@
 <script>
 const materials = {{ materials | tojson }};
 let items = [];
+let activeCategory = null;
 const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
 
 function fmtBRL(v) {
@@ -238,13 +250,28 @@ function toggleCartMobile() {
 }
 
 /* ─── MATERIAL LIST ─── */
+function buildCatPills() {
+  const cats = ['Todos', ...new Set(materials.map(m => m.category))];
+  const el = document.getElementById('catPills');
+  el.innerHTML = cats.map(c => 
+    `<span class="cat-pill${c==='Todos'?' active':''}" onclick="selectCat('${c}')">${c}</span>`
+  ).join('');
+}
+
+function selectCat(cat) {
+  activeCategory = cat === 'Todos' ? null : cat;
+  document.querySelectorAll('.cat-pill').forEach(p => {
+    p.classList.toggle('active', p.textContent === cat);
+  });
+  filterMaterials(document.getElementById('matSearch').value);
+}
+
 function filterMaterials(q) {
   const query = (q||'').trim().toLowerCase();
-  const filtered = query
-    ? materials.filter(m => m.name.toLowerCase().includes(query) || m.category.toLowerCase().includes(query))
-    : materials;
+  let filtered = activeCategory ? materials.filter(m => m.category === activeCategory) : materials;
+  if (query) filtered = filtered.filter(m => m.name.toLowerCase().includes(query) || m.category.toLowerCase().includes(query));
   document.getElementById('resultsLabel').textContent =
-    query ? `${filtered.length} resultado${filtered.length!==1?'s':''}` : `${materials.length} materiais`;
+    `${filtered.length} material${filtered.length!==1?'is':''}${activeCategory?' · '+activeCategory:''}`;
   renderMatList(filtered);
 }
 
@@ -418,10 +445,14 @@ function updateTotals() {
 function compartilhar() {
   const client = document.getElementById('clientName').value.trim() || 'Cliente';
   const note = document.getElementById('noteField').value.trim();
+  const address = document.getElementById('addressField').value.trim();
+  const phone = document.getElementById('phoneField').value.trim();
   const labor = getLabor();
   const laborDesc = document.getElementById('laborDesc').value.trim();
   let lines = ['*Orçamento FAGAL*'];
-  if (note) lines.push(`📍 ${note}`);
+  if (address) lines.push(`📍 ${address}`);
+  if (note) lines.push(`📝 ${note}`);
+  if (phone) lines.push(`📞 ${phone}`);
   lines.push(`👤 ${client}`, '');
   lines.push('*Materiais:*');
   items.forEach(item => {
@@ -444,6 +475,8 @@ async function submitSale(orcamento) {
   const labor = getLabor();
   const payload = {
     client,
+    phone: document.getElementById('phoneField').value.trim(),
+    address: document.getElementById('addressField').value.trim(),
     note: document.getElementById('noteField').value.trim(),
     paid: orcamento ? false : document.getElementById('paidCheck').checked,
     labor, labor_desc: document.getElementById('laborDesc').value.trim(),
@@ -461,6 +494,7 @@ async function submitSale(orcamento) {
 
 // ── INIT after DOM ready ──
 document.addEventListener('DOMContentLoaded', () => {
+  buildCatPills();
   filterMaterials('');
   renderCart();
 });

@@ -28,6 +28,8 @@
       <tr>
         <th>#</th>
         <th>Cliente</th>
+        <th>Telefone</th>
+        <th>Endereço</th>
         <th>Obs</th>
         <th>Total</th>
         <th>Status</th>
@@ -40,7 +42,9 @@
       <tr style="cursor:pointer;" onclick="window.location='/vendas/{{ s.id }}'">
         <td class="text-mono text-muted">#{{ s.id }}</td>
         <td><strong>{{ s.client_name }}</strong></td>
-        <td class="text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.note or '—' }}</td>
+        <td class="text-muted" style="white-space:nowrap;">{{ s.phone or '—' }}</td>
+        <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.address or '—' }}</td>
+        <td class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.note or '—' }}</td>
         <td class="text-mono"><strong>R$ {{ "%.2f"|format(s.total) }}</strong></td>
         <td>
           {% if s.get('is_orcamento') %}
