@@ -1,7 +1,30 @@
 {% extends "_base.html" %}
-{% block title %}Materiais{% endblock %}
+{% block title %}Materiais{% block scripts %}
+<script>
+function filterCat(cat) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  const pid = cat === '__all__' ? 'pill-__all__' : 'pill-' + cat.replace(/ /g,'_');
+  const pill = document.getElementById(pid);
+  if (pill) pill.classList.add('active');
+
+  document.querySelectorAll('.cat-group').forEach(g => {
+    g.style.display = (cat === '__all__' || g.dataset.cat === cat) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
+{% endblock %}
 
 {% block content %}
+<style>
+.cat-pill {
+  display:inline-block; padding:6px 16px; border-radius:20px; font-size:.82rem; font-weight:600;
+  border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+  cursor:pointer; transition:all .15s;
+}
+.cat-pill:hover { border-color:var(--accent); color:var(--accent); }
+.cat-pill.active { background:var(--accent); color:#111; border-color:var(--accent); }
+</style>
 <div class="page-header">
   <div>
     <div class="page-title">Materiais</div>
@@ -11,8 +34,15 @@
 </div>
 
 {% if cats %}
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;">
+  <span class="cat-pill active" onclick="filterCat('__all__')" id="pill-__all__">Todos</span>
+  {% for cat in cats.keys() %}
+  <span class="cat-pill" onclick="filterCat('{{ cat }}')" id="pill-{{ cat|replace(' ','_') }}">{{ cat }}</span>
+  {% endfor %}
+</div>
+
   {% for cat, items in cats.items() %}
-  <div class="cat-group">
+  <div class="cat-group" data-cat="{{ cat }}">
     <div class="cat-title">{{ cat }}</div>
     <div class="table-wrap">
       <table>
