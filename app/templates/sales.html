@@ -1,5 +1,16 @@
 {% extends "_base.html" %}
-{% block title %}Vendas{% endblock %}
+{% block title %}Vendas{% block scripts %}
+<script>
+function filterSales(q) {
+  const query = q.trim().toLowerCase();
+  document.querySelectorAll('#salesTable tbody tr').forEach(row => {
+    const client = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+    row.style.display = (!query || client.includes(query)) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -22,7 +33,13 @@
 </div>
 
 {% if sales %}
-<div class="card table-wrap">
+<div style="margin-bottom:12px;">
+  <input type="text" id="clientSearch" class="form-control"
+         placeholder="🔍 Filtrar por cliente..."
+         oninput="filterSales(this.value)"
+         style="max-width:320px;">
+</div>
+<div class="card table-wrap" id="salesTable">
   <table>
     <thead>
       <tr>
@@ -65,6 +82,7 @@
       {% endfor %}
     </tbody>
   </table>
+</div>
 </div>
 {% else %}
 <div class="card" style="text-align:center;padding:56px;color:var(--muted);">
