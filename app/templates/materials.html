@@ -1,19 +1,5 @@
 {% extends "_base.html" %}
-{% block title %}Materiais{% block scripts %}
-<script>
-function filterCat(cat) {
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-  const pid = cat === '__all__' ? 'pill-__all__' : 'pill-' + cat.replace(/ /g,'_');
-  const pill = document.getElementById(pid);
-  if (pill) pill.classList.add('active');
-
-  document.querySelectorAll('.cat-group').forEach(g => {
-    g.style.display = (cat === '__all__' || g.dataset.cat === cat) ? '' : 'none';
-  });
-}
-</script>
-{% endblock %}
-{% endblock %}
+{% block title %}Materiais{% endblock %}
 
 {% block content %}
 <style>
@@ -167,6 +153,16 @@ function filterCat(cat) {
 
 {% block scripts %}
 <script>
+function filterCat(cat) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  const pid = cat === '__all__' ? 'pill-__all__' : 'pill-' + cat.replace(/ /g,'_');
+  const pill = document.getElementById(pid);
+  if (pill) pill.classList.add('active');
+  document.querySelectorAll('.cat-group').forEach(g => {
+    g.style.display = (cat === '__all__' || g.dataset.cat === cat) ? '' : 'none';
+  });
+}
+
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
