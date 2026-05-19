@@ -26,7 +26,9 @@
   </div>
   <div class="card">
     <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Status</div>
-    {% if sale.paid %}
+    {% if sale.is_orcamento %}
+      <span class="badge badge-muted" style="font-size:1rem;padding:6px 14px;">📋 Orçamento</span>
+    {% elif sale.paid %}
       <span class="badge badge-green" style="font-size:1rem;padding:6px 14px;">✓ Pago</span>
     {% else %}
       <span class="badge badge-orange" style="font-size:1rem;padding:6px 14px;">Pendente</span>
