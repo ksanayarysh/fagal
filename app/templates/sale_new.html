@@ -142,8 +142,8 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title">Nova venda</div>
-    <div class="page-subtitle">Busque materiais e monte o carrinho</div>
+    <div class="page-title">{{ page_title }}</div>
+    <div class="page-subtitle">{{ page_subtitle }}</div>
   </div>
   <a href="/vendas" class="btn btn-secondary">← Voltar</a>
 </div>
@@ -167,6 +167,7 @@
 
   <!-- RIGHT: cart -->
   <div class="cart-panel" id="cartPanel">
+    <input type="hidden" id="saleId" value="{{ edit_sale_id or '' }}">
     <div class="cart-header" onclick="toggleCartMobile()">
       🛒 Carrinho
       <span class="cart-badge" id="cartCount">0</span>
@@ -486,16 +487,44 @@ async function submitSale(orcamento) {
       unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
     }))
   };
-  const r = await fetch('/vendas/nova', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  const saleId = document.getElementById('saleId').value;
+  const url = saleId ? `/vendas/${saleId}/editar` : '/vendas/nova';
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
   const data = await r.json();
   if (data.ok) window.location.href = `/vendas/${data.sale_id}`;
   else alert('Erro: ' + data.error);
 }
 
+// ── PREFILL (edit mode) ──
+const prefill = {{ prefill | tojson }};
+
 // ── INIT after DOM ready ──
 document.addEventListener('DOMContentLoaded', () => {
   buildCatPills();
   filterMaterials('');
+  if (prefill) {
+    document.getElementById('clientName').value = prefill.client || '';
+    document.getElementById('phoneField').value = prefill.phone || '';
+    document.getElementById('addressField').value = prefill.address || '';
+    document.getElementById('noteField').value = prefill.note || '';
+    document.getElementById('laborDesc').value = prefill.labor_desc || '';
+    if (prefill.labor) document.getElementById('laborVal').value = prefill.labor;
+    if (prefill.items) {
+      items = prefill.items.map(i => ({
+        id: Date.now() + Math.random(),
+        material_id: i.material_id,
+        material_name: i.material_name,
+        unit: i.unit,
+        unit_price: i.unit_price,
+        length: i.length || 1,
+        width: i.width || 1,
+        height: i.height || 1,
+        qty: i.qty,
+        subtotal: i.subtotal,
+      }));
+    }
+    updateTotals();
+  }
   renderCart();
 });
 </script>

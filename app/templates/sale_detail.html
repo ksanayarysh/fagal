@@ -98,7 +98,10 @@
   </div>
 </div>
 
-<div style="display:flex;gap:8px;">
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+  {% if sale.is_orcamento and not sale.paid %}
+  <a href="/vendas/{{ sale.id }}/editar" class="btn btn-primary">✏️ Editar orçamento</a>
+  {% endif %}
   <button class="btn btn-secondary" onclick="window.print()">🖨 Imprimir</button>
   <form method="post" action="/vendas/{{ sale.id }}/delete"
         onsubmit="return confirm('Excluir esta venda?')">
