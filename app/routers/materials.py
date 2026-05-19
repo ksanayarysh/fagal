@@ -22,8 +22,10 @@ async def list_materials(request: Request):
     cats = {}
     for r in rows:
         cats.setdefault(r["category"], []).append(dict(r))
+    categories = await pool.fetch("SELECT id, name FROM categories ORDER BY name")
     return templates.TemplateResponse("materials.html", {
-        "request": request, "cats": cats, "unit_labels": UNIT_LABELS, "units": UNITS
+        "request": request, "cats": cats, "unit_labels": UNIT_LABELS, "units": UNITS,
+        "categories": [dict(c) for c in categories],
     })
 
 @router.post("/add")

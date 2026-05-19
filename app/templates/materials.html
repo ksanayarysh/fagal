@@ -96,7 +96,12 @@ function filterCat(cat) {
         </div>
         <div class="form-group">
           <label class="form-label">Categoria</label>
-          <input name="category" class="form-control" required placeholder="Ex: Chapas, Tubos, Areia...">
+          <select name="category" class="form-control" required>
+            <option value="">— Selecionar —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.name }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Unidade</label>
@@ -131,7 +136,12 @@ function filterCat(cat) {
         </div>
         <div class="form-group">
           <label class="form-label">Categoria</label>
-          <input name="category" id="editCategory" class="form-control" required>
+          <select name="category" id="editCategory" class="form-control" required>
+            <option value="">— Selecionar —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.name }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Unidade</label>
@@ -167,7 +177,9 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 function openEdit(btn) {
   document.getElementById('editForm').action = `/materiais/${btn.dataset.id}/edit`;
   document.getElementById('editName').value = btn.dataset.name;
-  document.getElementById('editCategory').value = btn.dataset.cat;
+  const catSel = document.getElementById('editCategory');
+  catSel.value = btn.dataset.cat;
+  if (!catSel.value) { const opt = new Option(btn.dataset.cat, btn.dataset.cat, true, true); catSel.add(opt); catSel.value = btn.dataset.cat; }
   document.getElementById('editUnit').value = btn.dataset.unit;
   document.getElementById('editPrice').value = btn.dataset.price;
   openModal('editModal');

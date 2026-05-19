@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 import asyncpg, os
 
-from app.routers import materials, sales, auth, stock
+from app.routers import materials, sales, auth, stock, categories
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
@@ -80,6 +80,13 @@ async def run_migrations(pool):
         await conn.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS labor_desc TEXT")
         await conn.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS is_orcamento BOOLEAN NOT NULL DEFAULT FALSE")
         await conn.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS phone TEXT")
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
         await conn.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS address TEXT")
 
 app = FastAPI(lifespan=lifespan)
@@ -91,6 +98,7 @@ app.include_router(auth.router)
 app.include_router(materials.router)
 app.include_router(sales.router)
 app.include_router(stock.router)
+app.include_router(categories.router)
 
 @app.get("/")
 async def root():

@@ -1,0 +1,104 @@
+{% extends "_base.html" %}
+{% block title %}Categorias{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Categorias</div>
+    <div class="page-subtitle">Agrupamento de materiais</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('addModal')">+ Nova categoria</button>
+</div>
+
+{% if error %}
+<div style="background:rgba(231,76,60,.15);color:var(--red);border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+  ⚠️ {{ error }}
+</div>
+{% endif %}
+
+{% if cats %}
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nome</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cats %}
+      <tr>
+        <td class="text-muted text-mono">{{ c.id }}</td>
+        <td><strong>{{ c.name }}</strong></td>
+        <td class="text-right" style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm"
+            data-id="{{ c.id }}" data-name="{{ c.name }}"
+            onclick="openEdit(this)">Editar</button>
+          <form method="post" action="/categorias/{{ c.id }}/delete" style="display:inline"
+                onsubmit="return confirm('Remover categoria {{ c.name }}?')">
+            <button type="submit" class="btn btn-danger btn-sm">✕</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:48px;color:var(--muted);">
+  Nenhuma categoria cadastrada.<br>
+  <button class="btn btn-primary mt-16" onclick="openModal('addModal')">Criar primeira categoria</button>
+</div>
+{% endif %}
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">Nova categoria</div>
+    <form method="post" action="/categorias/add">
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input name="name" class="form-control" required autofocus
+               placeholder="Ex: Portão, Janela, Grade...">
+      </div>
+      <div class="flex gap-8 mt-8">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Editar categoria</div>
+    <form method="post" id="editForm">
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input name="name" id="editName" class="form-control" required>
+      </div>
+      <div class="flex gap-8 mt-8">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+function openEdit(btn) {
+  document.getElementById('editForm').action = `/categorias/${btn.dataset.id}/edit`;
+  document.getElementById('editName').value = btn.dataset.name;
+  openModal('editModal');
+}
+</script>
+{% endblock %}
