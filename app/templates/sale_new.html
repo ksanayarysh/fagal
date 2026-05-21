@@ -222,9 +222,16 @@
     </div>
 
     <div style="padding:8px 18px;border-bottom:1px solid var(--border);">
-      <button onclick="addNewSection()" class="btn btn-secondary btn-sm" style="width:100%;">
+      <button onclick="toggleNewSectionForm()" class="btn btn-secondary btn-sm" style="width:100%;">
         ＋ Nova seção
       </button>
+      <div id="newSectionForm" style="display:none;gap:6px;margin-top:8px;">
+        <input type="text" id="newSectionInput" class="form-control"
+               placeholder="Nome da seção..."
+               onkeydown="if(event.key==='Enter')addNewSection();if(event.key==='Escape')toggleNewSectionForm();"
+               style="flex:1;">
+        <button onclick="addNewSection()" class="btn btn-primary btn-sm">OK</button>
+      </div>
     </div>
     <div class="cart-items" id="cartItems">
       <div class="cart-empty">Adicione materiais da lista</div>
@@ -414,7 +421,7 @@ function renderCart() {
   document.getElementById('cartCount').textContent = items.length;
   filterMaterials(document.getElementById('matSearch').value);
 
-  if (!items.length) {
+  if (!items.length && !sections.length) {
     el.innerHTML = '<div class="cart-empty">Adicione materiais da lista</div>';
     updateTotals();
     return;
@@ -613,6 +620,7 @@ function addNewSection() {
   if (!name || !name.trim()) return;
   const sec = { id: newSectionId(), name: name.trim(), category: name.trim(), custom: true };
   sections.push(sec);
+  labors[sec.id] = { desc: '', val: 0 };
   activeSectionId = sec.id;
   renderCart();
   if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
