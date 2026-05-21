@@ -330,10 +330,12 @@ function renderMatList(list) {
   el.innerHTML = listCats.map(cat => {
     const catMats = list.filter(m => m.category === cat);
     const hasSections = sections.some(s => s.category === cat);
-    const catHeader = hasSections ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;border-top:1px solid var(--border);">
-      <span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">${cat}</span>
-      <button onclick="addSectionForCat('${cat}')" style="background:none;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Nova seção ${cat}</button>
-    </div>` : '';
+    const catHeader = hasSections
+      ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;border-top:1px solid var(--border);">'
+        + '<span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">' + cat + '</span>'
+        + '<button onclick="addSectionForCat(\'' + cat + '\')" style="background:none;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Nova seção ' + cat + '</button>'
+        + '</div>'
+      : '';
     return catHeader + catMats.map(m => {
     const u = UNIT[m.unit]||m.unit;
     const inCart = items.some(i => i.material_id == m.id);
