@@ -105,6 +105,26 @@
 .cart-actions { padding: 10px 18px 14px; display:flex; flex-direction:column; gap:8px; }
 .cart-actions .btn { width:100%; justify-content:center; }
 
+/* ── CART SECTIONS ── */
+.cart-section { border-bottom: 2px solid var(--border); }
+.cart-section:last-child { border-bottom: none; }
+.cart-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 18px;
+  background: var(--surface2);
+  font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted);
+}
+.cart-section-subtotal { font-family: var(--mono); color: var(--accent); font-size: .88rem; }
+.cart-section-labor {
+  padding: 8px 18px 10px;
+  border-top: 1px dashed var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.cart-section-labor-label { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.cart-section-labor input { flex: 1; padding: 5px 8px; font-size: .85rem; }
+.cart-section-labor-val { font-family: var(--mono); font-size: .85rem; color: var(--accent); white-space: nowrap; min-width: 70px; text-align: right; }
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   .sale-layout { grid-template-columns: 1fr; }
@@ -188,22 +208,7 @@
       <div class="cart-empty">Adicione materiais da lista</div>
     </div>
 
-    <div class="cart-labor">
-      <div class="cart-labor-title">Mão de obra</div>
-      <input type="text" id="laborDesc" class="form-control" placeholder="Descrição (solda, instalação...)">
-      <input type="text" inputmode="decimal" id="laborVal" class="form-control"
-             placeholder="R$ 0,00" oninput="updateTotals()" onkeyup="commaToPoint(this)">
-    </div>
-
     <div class="cart-totals">
-      <div class="cart-total-row">
-        <span style="color:var(--muted);">Materiais</span>
-        <span class="text-mono" id="totMaterials">R$ 0,00</span>
-      </div>
-      <div class="cart-total-row" id="totLaborRow" style="display:none;">
-        <span style="color:var(--muted);">Mão de obra</span>
-        <span class="text-mono" id="totLabor">R$ 0,00</span>
-      </div>
       <div class="cart-total-row grand">
         <span>TOTAL</span>
         <span id="totGrand">R$ 0,00</span>
@@ -230,6 +235,7 @@
 <script>
 const materials = {{ materials | tojson }};
 let items = [];
+let labors = {}; // { category: { desc, val } }
 let activeCategory = null;
 const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
 
@@ -254,7 +260,7 @@ function toggleCartMobile() {
 function buildCatPills() {
   const cats = ['Todos', ...new Set(materials.map(m => m.category))];
   const el = document.getElementById('catPills');
-  el.innerHTML = cats.map(c => 
+  el.innerHTML = cats.map(c =>
     `<span class="cat-pill${c==='Todos'?' active':''}" onclick="selectCat('${c}')">${c}</span>`
   ).join('');
 }
@@ -319,6 +325,7 @@ function addItem(matId) {
     id: Date.now(),
     material_id: mat.id,
     material_name: mat.name,
+    category: mat.category,
     unit: mat.unit,
     unit_price: parseFloat(mat.price),
     length: 1, width: 1, height: 1, qty: 1,
@@ -334,8 +341,6 @@ function addItem(matId) {
 function renderCart() {
   const el = document.getElementById('cartItems');
   document.getElementById('cartCount').textContent = items.length;
-
-  // refresh add buttons in list
   filterMaterials(document.getElementById('matSearch').value);
 
   if (!items.length) {
@@ -344,50 +349,83 @@ function renderCart() {
     return;
   }
 
-  el.innerHTML = items.map(item => {
-    const u = UNIT[item.unit]||item.unit;
-    let controls = '';
-    if (item.unit === 'm2') {
-      controls = `<div class="cart-dim">
-        <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
-          oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-        <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
-          oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-      </div>
-      <div class="dim-area">= ${(item.length*item.width).toFixed(3)} m²</div>`;
-    } else if (item.unit === 'm3') {
-      controls = `<div class="cart-dim">
-        <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
-          oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-        <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
-          oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-        <span>× A:</span><input type="text" inputmode="decimal" value="${item.height}"
-          oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-      </div>
-      <div class="dim-area">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
-    } else {
-      controls = `<div class="cart-qty">
-        <input type="text" inputmode="decimal" value="${item.qty}"
-          oninput="updateQty(${item.id},this.value)" onkeyup="commaToPoint(this)">
-        <span>${u}</span>
-      </div>`;
-    }
+  // group by category
+  const cats = [...new Set(items.map(i => i.category))];
 
-    return `<div class="cart-item" data-item-id="${item.id}">
-      <div class="cart-item-top">
-        <div class="cart-item-name">${item.material_name}</div>
-        <button class="cart-remove" onclick="removeItem(${item.id})">✕</button>
+  el.innerHTML = cats.map(cat => {
+    const catItems = items.filter(i => i.category === cat);
+    const lab = labors[cat] || {desc:'', val:0};
+    const matSub = catItems.reduce((s,i) => s+i.subtotal, 0);
+    const totalSec = matSub + (lab.val||0);
+
+    const rows = catItems.map(item => {
+      const u = UNIT[item.unit]||item.unit;
+      let controls = '';
+      if (item.unit === 'm2') {
+        controls = `<div class="cart-dim">
+          <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
+            oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+          <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
+            oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        </div>
+        <div class="dim-area">= ${(item.length*item.width).toFixed(3)} m²</div>`;
+      } else if (item.unit === 'm3') {
+        controls = `<div class="cart-dim">
+          <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
+            oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+          <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
+            oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+          <span>× A:</span><input type="text" inputmode="decimal" value="${item.height}"
+            oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        </div>
+        <div class="dim-area">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
+      } else {
+        controls = `<div class="cart-qty">
+          <input type="text" inputmode="decimal" value="${item.qty}"
+            oninput="updateQty(${item.id},this.value)" onkeyup="commaToPoint(this)">
+          <span>${u}</span>
+        </div>`;
+      }
+      return `<div class="cart-item" data-item-id="${item.id}">
+        <div class="cart-item-top">
+          <div class="cart-item-name">${item.material_name}</div>
+          <button class="cart-remove" onclick="removeItem(${item.id})">✕</button>
+        </div>
+        <div class="cart-item-bottom">
+          <div>${controls}</div>
+          <div class="cart-item-sub orca-subtotal">${fmtBRL(item.subtotal)}</div>
+        </div>
+        <div class="cart-price-hint">${fmtBRL(item.unit_price)}/${u}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="cart-section" data-cat="${cat}">
+      <div class="cart-section-header">
+        <span>📁 ${cat}</span>
+        <span class="cart-section-subtotal" id="sec-total-${cat.replace(/\s/g,'_')}">${fmtBRL(totalSec)}</span>
       </div>
-      <div class="cart-item-bottom">
-        <div>${controls}</div>
-        <div class="cart-item-sub orca-subtotal">${fmtBRL(item.subtotal)}</div>
+      ${rows}
+      <div class="cart-section-labor">
+        <span class="cart-section-labor-label">🔧 M.O.:</span>
+        <input type="text" inputmode="decimal" class="form-control"
+               placeholder="R$ 0,00"
+               value="${lab.val > 0 ? lab.val : ''}"
+               oninput="updateLabor('${cat}','val',this.value)"
+               onkeyup="commaToPoint(this)"
+               style="max-width:90px;padding:5px 8px;font-size:.85rem;">
+        <input type="text" class="form-control"
+               placeholder="Descrição"
+               value="${lab.desc||''}"
+               oninput="updateLabor('${cat}','desc',this.value)"
+               style="font-size:.85rem;padding:5px 8px;">
+        <span class="cart-section-labor-val" id="sec-labor-${cat.replace(/\s/g,'_')}">${lab.val>0?fmtBRL(lab.val):''}</span>
       </div>
-      <div class="cart-price-hint">${fmtBRL(item.unit_price)}/${u}</div>
     </div>`;
   }).join('');
 
   updateTotals();
 }
+
 
 function updateDim(id, field, val) {
   const item = items.find(i => i.id===id); if (!item) return;
@@ -429,18 +467,33 @@ function removeItem(id) {
   renderCart();
 }
 
-function getLabor() {
-  return parseFloat((document.getElementById('laborVal').value||'').replace(',','.')) || 0;
+function updateLabor(cat, field, val) {
+  if (!labors[cat]) labors[cat] = {desc:'', val:0};
+  if (field === 'val') labors[cat].val = parseFloat(val.replace(',','.')) || 0;
+  else labors[cat].desc = val;
+  // update section subtotal display
+  const key = cat.replace(/\s/g,'_');
+  const sec = document.querySelector(`[data-cat="${cat}"]`);
+  if (sec) {
+    const catItems = items.filter(i => i.category === cat);
+    const matSub = catItems.reduce((s,i) => s+i.subtotal, 0);
+    const total = matSub + (labors[cat].val||0);
+    const st = document.getElementById('sec-total-'+key);
+    if (st) st.textContent = fmtBRL(total);
+    const sl = document.getElementById('sec-labor-'+key);
+    if (sl) sl.textContent = labors[cat].val > 0 ? fmtBRL(labors[cat].val) : '';
+  }
+  updateTotals();
+}
+
+function getTotalLabor() {
+  return Object.values(labors).reduce((s,l) => s + (l.val||0), 0);
 }
 
 function updateTotals() {
   const mat = items.reduce((s,i) => s+i.subtotal, 0);
-  const labor = getLabor();
-  document.getElementById('totMaterials').textContent = fmtBRL(mat);
-  const lr = document.getElementById('totLaborRow');
-  if (labor > 0) { lr.style.display='flex'; document.getElementById('totLabor').textContent = fmtBRL(labor); }
-  else lr.style.display = 'none';
-  document.getElementById('totGrand').textContent = fmtBRL(mat+labor);
+  const labor = getTotalLabor();
+  document.getElementById('totGrand').textContent = fmtBRL(mat + labor);
 }
 
 function compartilhar() {
@@ -455,18 +508,25 @@ function compartilhar() {
   if (note) lines.push(`📝 ${note}`);
   if (phone) lines.push(`📞 ${phone}`);
   lines.push(`👤 ${client}`, '');
-  lines.push('*Materiais:*');
-  items.forEach(item => {
-    const u = UNIT[item.unit]||item.unit;
-    let q = item.unit==='m2' ? `${item.width}×${item.length}m = ${item.qty.toFixed(3)} m²`
-          : item.unit==='m3' ? `${item.width}×${item.length}×${item.height}m = ${item.qty.toFixed(3)} m³`
-          : `${item.qty} ${u}`;
-    lines.push(`• ${item.material_name}: ${q} → ${fmtBRL(item.subtotal)}`);
+  const cats = [...new Set(items.map(i => i.category))];
+  cats.forEach(cat => {
+    lines.push(`*${cat}:*`);
+    const catItems = items.filter(i => i.category === cat);
+    catItems.forEach(item => {
+      const u = UNIT[item.unit]||item.unit;
+      let q = item.unit==='m2' ? `${item.width}×${item.length}m = ${item.qty.toFixed(3)} m²`
+            : item.unit==='m3' ? `${item.width}×${item.length}×${item.height}m = ${item.qty.toFixed(3)} m³`
+            : `${item.qty} ${u}`;
+      lines.push(`• ${item.material_name}: ${q} → ${fmtBRL(item.subtotal)}`);
+    });
+    const lab = labors[cat];
+    if (lab && lab.val > 0) lines.push(`🔧 M.O.${lab.desc?' ('+lab.desc+')':''}: ${fmtBRL(lab.val)}`);
+    const catMat = catItems.reduce((s,i) => s+i.subtotal, 0);
+    lines.push(`_Subtotal: ${fmtBRL(catMat + (lab&&lab.val||0))}_`, '');
   });
-  if (labor > 0) lines.push('', `🔧 Mão de obra${laborDesc?' ('+laborDesc+')':''}: ${fmtBRL(labor)}`);
   const mat = items.reduce((s,i) => s+i.subtotal, 0);
-  lines.push('', `*TOTAL: ${fmtBRL(mat+labor)}*`);
-  window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+  lines.push(`*TOTAL: ${fmtBRL(mat+getTotalLabor())}*`);
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
 async function submitSale(orcamento) {
@@ -480,10 +540,13 @@ async function submitSale(orcamento) {
     address: document.getElementById('addressField').value.trim(),
     note: document.getElementById('noteField').value.trim(),
     paid: orcamento ? false : document.getElementById('paidCheck').checked,
-    labor, labor_desc: document.getElementById('laborDesc').value.trim(),
+    labor: getTotalLabor(),
+    labor_desc: Object.entries(labors).filter(([,l])=>l.val>0).map(([cat,l])=>`${cat}: ${l.desc||'M.O.'}`).join(' | '),
+    labors,
     orcamento,
     items: items.map(i => ({
       material_id: i.material_id, material_name: i.material_name,
+      category: i.category,
       unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
     }))
   };
