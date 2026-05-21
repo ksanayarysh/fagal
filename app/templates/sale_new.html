@@ -639,12 +639,16 @@ function getTotalLabor() {
 }
 
 function addNewSection() {
-  const name = prompt('Nome da seção:', 'Nova seção ' + (sections.length + 1));
-  if (!name || !name.trim()) return;
-  const sec = { id: newSectionId(), name: name.trim(), category: name.trim(), custom: true };
+  const inp = document.getElementById('newSectionInput');
+  if (!inp) return;
+  const name = inp.value.trim();
+  if (!name) { inp.focus(); return; }
+  const sec = { id: newSectionId(), name, category: name, custom: true };
   sections.push(sec);
   labors[sec.id] = { desc: '', val: 0 };
   activeSectionId = sec.id;
+  inp.value = '';
+  document.getElementById('newSectionForm').style.display = 'none';
   renderCart();
   if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
 }
