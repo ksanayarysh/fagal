@@ -105,6 +105,32 @@
 .cart-actions { padding: 10px 18px 14px; display:flex; flex-direction:column; gap:8px; }
 .cart-actions .btn { width:100%; justify-content:center; }
 
+/* ── CART SECTIONS ── */
+.cart-section { border-bottom: 2px solid var(--border); }
+.cart-section:last-child { border-bottom: none; }
+.cart-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 18px;
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  user-select: none;
+}
+.cart-section-title { font-size: .92rem; font-weight: 800; color: var(--text); letter-spacing: .01em; }
+.cart-section-arrow { font-size: .75rem; color: var(--muted); transition: transform .2s; }
+.cart-section-arrow.collapsed { transform: rotate(-90deg); }
+.cart-section-subtotal { font-family: var(--mono); color: var(--accent); font-size: .95rem; font-weight: 700; }
+.cart-section-body { }
+.cart-section-body.collapsed { display: none; }
+.cart-section-labor {
+  padding: 8px 18px 10px;
+  border-top: 1px dashed var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.cart-section-labor-label { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.cart-section-labor input { flex: 1; padding: 5px 8px; font-size: .85rem; }
+.cart-section-labor-val { font-family: var(--mono); font-size: .85rem; color: var(--accent); white-space: nowrap; min-width: 70px; text-align: right; }
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   .sale-layout { grid-template-columns: 1fr; }
@@ -188,22 +214,7 @@
       <div class="cart-empty">Adicione materiais da lista</div>
     </div>
 
-    <div class="cart-labor">
-      <div class="cart-labor-title">Mão de obra</div>
-      <input type="text" id="laborDesc" class="form-control" placeholder="Descrição (solda, instalação...)">
-      <input type="text" inputmode="decimal" id="laborVal" class="form-control"
-             placeholder="R$ 0,00" oninput="updateTotals()" onkeyup="commaToPoint(this)">
-    </div>
-
     <div class="cart-totals">
-      <div class="cart-total-row">
-        <span style="color:var(--muted);">Materiais</span>
-        <span class="text-mono" id="totMaterials">R$ 0,00</span>
-      </div>
-      <div class="cart-total-row" id="totLaborRow" style="display:none;">
-        <span style="color:var(--muted);">Mão de obra</span>
-        <span class="text-mono" id="totLabor">R$ 0,00</span>
-      </div>
       <div class="cart-total-row grand">
         <span>TOTAL</span>
         <span id="totGrand">R$ 0,00</span>
@@ -229,8 +240,30 @@
 {% block scripts %}
 <script>
 const materials = {{ materials | tojson }};
-let items = [];
+let items = [];          // each item has section_id
+let sections = [];       // [{id, name, category}]
+let labors = {};         // { section_id: { desc, val } }
 let activeCategory = null;
+let sectionCounter = 0;
+
+function newSectionId() { return 'sec_' + (++sectionCounter); }
+
+function getOrCreateSection(category) {
+  // find existing section for this category that has no custom name
+  let sec = sections.find(s => s.category === category && !s.custom);
+  if (!sec) {
+    sec = { id: newSectionId(), name: category, category, custom: false };
+    sections.push(sec);
+  }
+  return sec;
+}
+
+function addSection(category) {
+  const count = sections.filter(s => s.category === category).length + 1;
+  const sec = { id: newSectionId(), name: category + ' ' + count, category, custom: true };
+  sections.push(sec);
+  renderCart();
+}
 const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
 
 function fmtBRL(v) {
@@ -254,9 +287,14 @@ function toggleCartMobile() {
 function buildCatPills() {
   const cats = ['Todos', ...new Set(materials.map(m => m.category))];
   const el = document.getElementById('catPills');
-  el.innerHTML = cats.map(c => 
-    `<span class="cat-pill${c==='Todos'?' active':''}" onclick="selectCat('${c}')">${c}</span>`
-  ).join('');
+  el.innerHTML = cats.map(c => {
+    if (c === 'Todos') return `<span class="cat-pill active" onclick="selectCat('Todos')" id="pill-Todos">Todos</span>`;
+    const key = c.replace(/ /g,'_');
+    return `<span class="cat-pill" id="pill-${key}" style="display:inline-flex;align-items:center;gap:0;padding:0;overflow:hidden;border-radius:20px;">
+      <span onclick="selectCat('${c}')" style="padding:6px 12px;cursor:pointer;">📁 ${c}</span>
+      <span onclick="addAllFromCat('${c}')" title="Adicionar todos os materiais desta categoria" style="padding:6px 10px;border-left:1px solid rgba(255,255,255,.15);cursor:pointer;font-weight:800;" >＋</span>
+    </span>`;
+  }).join('');
 }
 
 function selectCat(cat) {
@@ -276,13 +314,29 @@ function filterMaterials(q) {
   renderMatList(filtered);
 }
 
+function addAllFromCat(cat) {
+  const catMats = materials.filter(m => m.category === cat);
+  catMats.forEach(m => addItem(m.id));
+}
+
 function renderMatList(list) {
   const el = document.getElementById('matList');
   if (!list.length) {
     el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Nenhum material encontrado</div>';
     return;
   }
-  el.innerHTML = list.map(m => {
+  // group by category for display
+  const listCats = [...new Set(list.map(m => m.category))];
+  el.innerHTML = listCats.map(cat => {
+    const catMats = list.filter(m => m.category === cat);
+    const hasSections = sections.some(s => s.category === cat);
+    const catHeader = hasSections
+      ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;border-top:1px solid var(--border);">'
+        + '<span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">' + cat + '</span>'
+        + '<button onclick="addSectionForCat(\'' + cat + '\')" style="background:none;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Nova seção ' + cat + '</button>'
+        + '</div>'
+      : '';
+    return catHeader + catMats.map(m => {
     const u = UNIT[m.unit]||m.unit;
     const inCart = items.some(i => i.material_id == m.id);
     const stockHtml = m.qty_stock > 0
@@ -306,7 +360,9 @@ function renderMatList(list) {
 function addItem(matId) {
   const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-  const existing = items.find(i => i.material_id == matId);
+  // only increment if same section exists (default section for category)
+  const defaultSec = sections.find(s => s.category === mat.category && !s.custom);
+  const existing = defaultSec ? items.find(i => i.material_id == matId && i.section_id === defaultSec.id) : null;
   if (existing) {
     if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
     else if (existing.unit === 'm3') { existing.length += 1; existing.qty = existing.length * existing.width * existing.height; }
@@ -315,10 +371,13 @@ function addItem(matId) {
     renderCart();
     return;
   }
+  const sec = getOrCreateSection(mat.category);
   items.push({
     id: Date.now(),
+    section_id: sec.id,
     material_id: mat.id,
     material_name: mat.name,
+    category: mat.category,
     unit: mat.unit,
     unit_price: parseFloat(mat.price),
     length: 1, width: 1, height: 1, qty: 1,
@@ -334,8 +393,6 @@ function addItem(matId) {
 function renderCart() {
   const el = document.getElementById('cartItems');
   document.getElementById('cartCount').textContent = items.length;
-
-  // refresh add buttons in list
   filterMaterials(document.getElementById('matSearch').value);
 
   if (!items.length) {
@@ -344,50 +401,99 @@ function renderCart() {
     return;
   }
 
-  el.innerHTML = items.map(item => {
-    const u = UNIT[item.unit]||item.unit;
-    let controls = '';
-    if (item.unit === 'm2') {
-      controls = `<div class="cart-dim">
-        <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
-          oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-        <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
-          oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-      </div>
-      <div class="dim-area">= ${(item.length*item.width).toFixed(3)} m²</div>`;
-    } else if (item.unit === 'm3') {
-      controls = `<div class="cart-dim">
-        <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
-          oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-        <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
-          oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-        <span>× A:</span><input type="text" inputmode="decimal" value="${item.height}"
-          oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
-      </div>
-      <div class="dim-area">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
-    } else {
-      controls = `<div class="cart-qty">
-        <input type="text" inputmode="decimal" value="${item.qty}"
-          oninput="updateQty(${item.id},this.value)" onkeyup="commaToPoint(this)">
-        <span>${u}</span>
-      </div>`;
-    }
+  // group by sections (preserving order)
+  const activeSections = sections.filter(s => items.some(i => i.section_id === s.id));
 
-    return `<div class="cart-item" data-item-id="${item.id}">
-      <div class="cart-item-top">
-        <div class="cart-item-name">${item.material_name}</div>
-        <button class="cart-remove" onclick="removeItem(${item.id})">✕</button>
+  el.innerHTML = activeSections.map(sec => {
+    const cat = sec.category;
+    const catItems = items.filter(i => i.section_id === sec.id);
+    const lab = labors[sec.id] || {desc:'', val:0};
+    const matSub = catItems.reduce((s,i) => s+i.subtotal, 0);
+    const totalSec = matSub + (lab.val||0);
+
+    const rows = catItems.map(item => {
+      const u = UNIT[item.unit]||item.unit;
+      let controls = '';
+      if (item.unit === 'm2') {
+        controls = `<div class="cart-dim">
+          <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
+            oninput="updateDim(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+          <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
+            oninput="updateDim(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        </div>
+        <div class="dim-area">= ${(item.length*item.width).toFixed(3)} m²</div>`;
+      } else if (item.unit === 'm3') {
+        controls = `<div class="cart-dim">
+          <span>L:</span><input type="text" inputmode="decimal" value="${item.width}"
+            oninput="updateDim3(${item.id},'width',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+          <span>× C:</span><input type="text" inputmode="decimal" value="${item.length}"
+            oninput="updateDim3(${item.id},'length',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+          <span>× A:</span><input type="text" inputmode="decimal" value="${item.height}"
+            oninput="updateDim3(${item.id},'height',this.value)" onkeyup="commaToPoint(this)"><span>m</span>
+        </div>
+        <div class="dim-area">= ${(item.length*item.width*item.height).toFixed(3)} m³</div>`;
+      } else {
+        controls = `<div class="cart-qty">
+          <input type="text" inputmode="decimal" value="${item.qty}"
+            oninput="updateQty(${item.id},this.value)" onkeyup="commaToPoint(this)">
+          <span>${u}</span>
+        </div>`;
+      }
+      return `<div class="cart-item" data-item-id="${item.id}">
+        <div class="cart-item-top">
+          <div class="cart-item-name">${item.material_name}</div>
+          <button class="cart-remove" onclick="removeItem(${item.id})">✕</button>
+        </div>
+        <div class="cart-item-bottom">
+          <div>${controls}</div>
+          <div class="cart-item-sub orca-subtotal">${fmtBRL(item.subtotal)}</div>
+        </div>
+        <div class="cart-price-hint">${fmtBRL(item.unit_price)}/${u}</div>
+      </div>`;
+    }).join('');
+
+    const secKey = sec.id;
+    return `<div class="cart-section" data-sec="${sec.id}">
+      <div class="cart-section-header">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;" onclick="toggleSection('${secKey}')">
+          <span class="cart-section-arrow" id="arrow-${secKey}">▼</span>
+          <span class="cart-section-title" id="sectitle-${secKey}"
+                ondblclick="renameSection('${sec.id}')"
+                title="Duplo clique para renomear">📁 ${sec.name}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="cart-section-subtotal" id="sec-total-${secKey}">${fmtBRL(totalSec)}</span>
+          <button onclick="renameSection('${sec.id}')" title="Renomear"
+                  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 4px;">✏️</button>
+          <button onclick="removeSection('${sec.id}')" title="Remover seção"
+                  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 4px;">🗑</button>
+        </div>
       </div>
-      <div class="cart-item-bottom">
-        <div>${controls}</div>
-        <div class="cart-item-sub orca-subtotal">${fmtBRL(item.subtotal)}</div>
-      </div>
-      <div class="cart-price-hint">${fmtBRL(item.unit_price)}/${u}</div>
+      <div class="cart-section-body" id="body-${secKey}">
+      ${rows}
+      <div class="cart-section-labor">
+        <span class="cart-section-labor-label">🔧 M.O.:</span>
+        <input type="text" inputmode="decimal" class="form-control"
+               placeholder="R$ 0,00"
+               value="${lab.val > 0 ? lab.val : ''}"
+               oninput="updateLabor('${sec.id}','val',this.value)"
+               onkeyup="commaToPoint(this)"
+               style="max-width:90px;padding:5px 8px;font-size:.85rem;">
+        <input type="text" class="form-control"
+               placeholder="Descrição"
+               value="${lab.desc||''}"
+               oninput="updateLabor('${sec.id}','desc',this.value)"
+               style="font-size:.85rem;padding:5px 8px;">
+        <span class="cart-section-labor-val" id="sec-labor-${cat.replace(/\s/g,'_')}">${lab.val>0?fmtBRL(lab.val):''}</span>
+        </div>
+    </div>
     </div>`;
+    }).join('');
   }).join('');
 
   updateTotals();
 }
+
 
 function updateDim(id, field, val) {
   const item = items.find(i => i.id===id); if (!item) return;
@@ -429,18 +535,67 @@ function removeItem(id) {
   renderCart();
 }
 
-function getLabor() {
-  return parseFloat((document.getElementById('laborVal').value||'').replace(',','.')) || 0;
+function toggleSection(secKey) {
+  const body = document.getElementById('body-'+secKey);
+  const arrow = document.getElementById('arrow-'+secKey);
+  if (body) body.classList.toggle('collapsed');
+  if (arrow) arrow.classList.toggle('collapsed');
+}
+
+function updateLabor(secId, field, val) {
+  if (!labors[secId]) labors[secId] = {desc:'', val:0};
+  if (field === 'val') labors[secId].val = parseFloat(val.replace(',','.')) || 0;
+  else labors[secId].desc = val;
+  const secItems = items.filter(i => i.section_id === secId);
+  const matSub = secItems.reduce((s,i) => s+i.subtotal, 0);
+  const total = matSub + (labors[secId].val||0);
+  const st = document.getElementById('sec-total-'+secId);
+  if (st) st.textContent = fmtBRL(total);
+  const sl = document.getElementById('sec-labor-'+secId);
+  if (sl) sl.textContent = labors[secId].val > 0 ? fmtBRL(labors[secId].val) : '';
+  updateTotals();
+}
+
+function renameSection(secId) {
+  const sec = sections.find(s => s.id === secId);
+  if (!sec) return;
+  const newName = prompt('Nome da seção:', sec.name);
+  if (newName && newName.trim()) {
+    sec.name = newName.trim();
+    sec.custom = true;
+    const el = document.getElementById('sectitle-'+secId);
+    if (el) el.textContent = '📁 ' + sec.name;
+  }
+}
+
+function removeSection(secId) {
+  const secItems = items.filter(i => i.section_id === secId);
+  if (secItems.length > 0 && !confirm('Remover esta seção e todos os seus itens?')) return;
+  items = items.filter(i => i.section_id !== secId);
+  sections = sections.filter(s => s.id !== secId);
+  delete labors[secId];
+  renderCart();
+}
+
+function getTotalLabor() {
+  return Object.values(labors).reduce((s,l) => s + (l.val||0), 0);
+}
+
+function addSectionForCat(category) {
+  const count = sections.filter(s => s.category === category).length + 1;
+  const sec = { id: newSectionId(), name: category + ' ' + count, category, custom: true };
+  sections.push(sec);
+  // add first item from category to new section automatically
+  // just create empty section, user adds items manually
+  renderCart();
+  // open cart on mobile
+  if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
 }
 
 function updateTotals() {
   const mat = items.reduce((s,i) => s+i.subtotal, 0);
-  const labor = getLabor();
-  document.getElementById('totMaterials').textContent = fmtBRL(mat);
-  const lr = document.getElementById('totLaborRow');
-  if (labor > 0) { lr.style.display='flex'; document.getElementById('totLabor').textContent = fmtBRL(labor); }
-  else lr.style.display = 'none';
-  document.getElementById('totGrand').textContent = fmtBRL(mat+labor);
+  const labor = getTotalLabor();
+  document.getElementById('totGrand').textContent = fmtBRL(mat + labor);
 }
 
 function compartilhar() {
@@ -448,44 +603,57 @@ function compartilhar() {
   const note = document.getElementById('noteField').value.trim();
   const address = document.getElementById('addressField').value.trim();
   const phone = document.getElementById('phoneField').value.trim();
-  const labor = getLabor();
+  const labor = getTotalLabor();
   const laborDesc = document.getElementById('laborDesc').value.trim();
   let lines = ['*Orçamento FAGAL*'];
   if (address) lines.push(`📍 ${address}`);
   if (note) lines.push(`📝 ${note}`);
   if (phone) lines.push(`📞 ${phone}`);
   lines.push(`👤 ${client}`, '');
-  lines.push('*Materiais:*');
-  items.forEach(item => {
-    const u = UNIT[item.unit]||item.unit;
-    let q = item.unit==='m2' ? `${item.width}×${item.length}m = ${item.qty.toFixed(3)} m²`
-          : item.unit==='m3' ? `${item.width}×${item.length}×${item.height}m = ${item.qty.toFixed(3)} m³`
-          : `${item.qty} ${u}`;
-    lines.push(`• ${item.material_name}: ${q} → ${fmtBRL(item.subtotal)}`);
+  const activeSecs = sections.filter(s => items.some(i => i.section_id === s.id));
+  activeSecs.forEach(sec => {
+    lines.push(`*${sec.name}:*`);
+    const secItems = items.filter(i => i.section_id === sec.id);
+    secItems.forEach(item => {
+      const u = UNIT[item.unit]||item.unit;
+      let q = item.unit==='m2' ? `${item.width}×${item.length}m = ${item.qty.toFixed(3)} m²`
+            : item.unit==='m3' ? `${item.width}×${item.length}×${item.height}m = ${item.qty.toFixed(3)} m³`
+            : `${item.qty} ${u}`;
+      lines.push(`• ${item.material_name}: ${q} → ${fmtBRL(item.subtotal)}`);
+    });
+    const lab = labors[sec.id];
+    if (lab && lab.val > 0) lines.push(`🔧 M.O.${lab.desc?' ('+lab.desc+')':''}: ${fmtBRL(lab.val)}`);
+    const secMat = secItems.reduce((s,i) => s+i.subtotal, 0);
+    lines.push(`_Subtotal: ${fmtBRL(secMat + (lab&&lab.val||0))}_`, '');
   });
-  if (labor > 0) lines.push('', `🔧 Mão de obra${laborDesc?' ('+laborDesc+')':''}: ${fmtBRL(labor)}`);
   const mat = items.reduce((s,i) => s+i.subtotal, 0);
-  lines.push('', `*TOTAL: ${fmtBRL(mat+labor)}*`);
-  window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+  lines.push(`*TOTAL: ${fmtBRL(mat+getTotalLabor())}*`);
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
 async function submitSale(orcamento) {
   const client = document.getElementById('clientName').value.trim();
   if (!client) { alert('Informe o nome do cliente!'); document.getElementById('clientName').focus(); return; }
   if (!items.length) { alert('Adicione pelo menos um material!'); return; }
-  const labor = getLabor();
+  const labor = getTotalLabor();
   const payload = {
     client,
     phone: document.getElementById('phoneField').value.trim(),
     address: document.getElementById('addressField').value.trim(),
     note: document.getElementById('noteField').value.trim(),
     paid: orcamento ? false : document.getElementById('paidCheck').checked,
-    labor, labor_desc: document.getElementById('laborDesc').value.trim(),
+    labor: getTotalLabor(),
+    labor_desc: Object.entries(labors).filter(([,l])=>l.val>0).map(([cat,l])=>`${cat}: ${l.desc||'M.O.'}`).join(' | '),
+    labors,
     orcamento,
-    items: items.map(i => ({
-      material_id: i.material_id, material_name: i.material_name,
-      unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
-    }))
+    items: items.map(i => {
+      const sec = sections.find(s => s.id === i.section_id);
+      return {
+        material_id: i.material_id, material_name: i.material_name,
+        category: i.category, section_name: sec ? sec.name : i.category,
+        unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
+      };
+    })
   };
   const saleId = document.getElementById('saleId').value;
   const url = saleId ? `/vendas/${saleId}/editar` : '/vendas/nova';
