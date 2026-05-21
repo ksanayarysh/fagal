@@ -231,7 +231,7 @@ async def toggle_paid(request: Request, sale_id: int):
     if not is_authenticated(request):
         return RedirectResponse("/login")
     pool = request.app.state.db
-    await pool.execute("UPDATE sales SET paid = NOT paid WHERE id=$1", sale_id)
+    await pool.execute("UPDATE sales SET paid = NOT paid, is_orcamento = FALSE WHERE id=$1", sale_id)
     return RedirectResponse(f"/vendas/{sale_id}", status_code=303)
 
 @router.post("/{sale_id}/delete")

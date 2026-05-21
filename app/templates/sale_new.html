@@ -240,9 +240,30 @@
 {% block scripts %}
 <script>
 const materials = {{ materials | tojson }};
-let items = [];
-let labors = {}; // { category: { desc, val } }
+let items = [];          // each item has section_id
+let sections = [];       // [{id, name, category}]
+let labors = {};         // { section_id: { desc, val } }
 let activeCategory = null;
+let sectionCounter = 0;
+
+function newSectionId() { return 'sec_' + (++sectionCounter); }
+
+function getOrCreateSection(category) {
+  // find existing section for this category that has no custom name
+  let sec = sections.find(s => s.category === category && !s.custom);
+  if (!sec) {
+    sec = { id: newSectionId(), name: category, category, custom: false };
+    sections.push(sec);
+  }
+  return sec;
+}
+
+function addSection(category) {
+  const count = sections.filter(s => s.category === category).length + 1;
+  const sec = { id: newSectionId(), name: category + ' ' + count, category, custom: true };
+  sections.push(sec);
+  renderCart();
+}
 const UNIT = {m2:'m²', m3:'m³', m:'m', un:'un', kg:'kg'};
 
 function fmtBRL(v) {
@@ -304,7 +325,16 @@ function renderMatList(list) {
     el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">Nenhum material encontrado</div>';
     return;
   }
-  el.innerHTML = list.map(m => {
+  // group by category for display
+  const listCats = [...new Set(list.map(m => m.category))];
+  el.innerHTML = listCats.map(cat => {
+    const catMats = list.filter(m => m.category === cat);
+    const hasSections = sections.some(s => s.category === cat);
+    const catHeader = hasSections ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;border-top:1px solid var(--border);">
+      <span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">${cat}</span>
+      <button onclick="addSectionForCat('${cat}')" style="background:none;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Nova seção ${cat}</button>
+    </div>` : '';
+    return catHeader + catMats.map(m => {
     const u = UNIT[m.unit]||m.unit;
     const inCart = items.some(i => i.material_id == m.id);
     const stockHtml = m.qty_stock > 0
@@ -328,7 +358,9 @@ function renderMatList(list) {
 function addItem(matId) {
   const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-  const existing = items.find(i => i.material_id == matId);
+  // only increment if same section exists (default section for category)
+  const defaultSec = sections.find(s => s.category === mat.category && !s.custom);
+  const existing = defaultSec ? items.find(i => i.material_id == matId && i.section_id === defaultSec.id) : null;
   if (existing) {
     if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
     else if (existing.unit === 'm3') { existing.length += 1; existing.qty = existing.length * existing.width * existing.height; }
@@ -337,8 +369,10 @@ function addItem(matId) {
     renderCart();
     return;
   }
+  const sec = getOrCreateSection(mat.category);
   items.push({
     id: Date.now(),
+    section_id: sec.id,
     material_id: mat.id,
     material_name: mat.name,
     category: mat.category,
@@ -365,12 +399,13 @@ function renderCart() {
     return;
   }
 
-  // group by category
-  const cats = [...new Set(items.map(i => i.category))];
+  // group by sections (preserving order)
+  const activeSections = sections.filter(s => items.some(i => i.section_id === s.id));
 
-  el.innerHTML = cats.map(cat => {
-    const catItems = items.filter(i => i.category === cat);
-    const lab = labors[cat] || {desc:'', val:0};
+  el.innerHTML = activeSections.map(sec => {
+    const cat = sec.category;
+    const catItems = items.filter(i => i.section_id === sec.id);
+    const lab = labors[sec.id] || {desc:'', val:0};
     const matSub = catItems.reduce((s,i) => s+i.subtotal, 0);
     const totalSec = matSub + (lab.val||0);
 
@@ -415,34 +450,43 @@ function renderCart() {
       </div>`;
     }).join('');
 
-    const catKey = cat.replace(/[^a-zA-Z0-9]/g,'_');
-    return `<div class="cart-section" data-cat="${cat}">
-      <div class="cart-section-header" onclick="toggleSection('${catKey}')">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="cart-section-arrow" id="arrow-${catKey}">▼</span>
-          <span class="cart-section-title">📁 ${cat}</span>
+    const secKey = sec.id;
+    return `<div class="cart-section" data-sec="${sec.id}">
+      <div class="cart-section-header">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;" onclick="toggleSection('${secKey}')">
+          <span class="cart-section-arrow" id="arrow-${secKey}">▼</span>
+          <span class="cart-section-title" id="sectitle-${secKey}"
+                ondblclick="renameSection('${sec.id}')"
+                title="Duplo clique para renomear">📁 ${sec.name}</span>
         </div>
-        <span class="cart-section-subtotal" id="sec-total-${catKey}">${fmtBRL(totalSec)}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="cart-section-subtotal" id="sec-total-${secKey}">${fmtBRL(totalSec)}</span>
+          <button onclick="renameSection('${sec.id}')" title="Renomear"
+                  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 4px;">✏️</button>
+          <button onclick="removeSection('${sec.id}')" title="Remover seção"
+                  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 4px;">🗑</button>
+        </div>
       </div>
-      <div class="cart-section-body" id="body-${catKey}">
+      <div class="cart-section-body" id="body-${secKey}">
       ${rows}
       <div class="cart-section-labor">
         <span class="cart-section-labor-label">🔧 M.O.:</span>
         <input type="text" inputmode="decimal" class="form-control"
                placeholder="R$ 0,00"
                value="${lab.val > 0 ? lab.val : ''}"
-               oninput="updateLabor('${cat}','val',this.value)"
+               oninput="updateLabor('${sec.id}','val',this.value)"
                onkeyup="commaToPoint(this)"
                style="max-width:90px;padding:5px 8px;font-size:.85rem;">
         <input type="text" class="form-control"
                placeholder="Descrição"
                value="${lab.desc||''}"
-               oninput="updateLabor('${cat}','desc',this.value)"
+               oninput="updateLabor('${sec.id}','desc',this.value)"
                style="font-size:.85rem;padding:5px 8px;">
         <span class="cart-section-labor-val" id="sec-labor-${cat.replace(/\s/g,'_')}">${lab.val>0?fmtBRL(lab.val):''}</span>
         </div>
     </div>
     </div>`;
+    }).join('');
   }).join('');
 
   updateTotals();
@@ -489,34 +533,61 @@ function removeItem(id) {
   renderCart();
 }
 
-function toggleSection(catKey) {
-  const body = document.getElementById('body-'+catKey);
-  const arrow = document.getElementById('arrow-'+catKey);
+function toggleSection(secKey) {
+  const body = document.getElementById('body-'+secKey);
+  const arrow = document.getElementById('arrow-'+secKey);
   if (body) body.classList.toggle('collapsed');
   if (arrow) arrow.classList.toggle('collapsed');
 }
 
-function updateLabor(cat, field, val) {
-  if (!labors[cat]) labors[cat] = {desc:'', val:0};
-  if (field === 'val') labors[cat].val = parseFloat(val.replace(',','.')) || 0;
-  else labors[cat].desc = val;
-  // update section subtotal display
-  const key = cat.replace(/\s/g,'_');
-  const sec = document.querySelector(`[data-cat="${cat}"]`);
-  if (sec) {
-    const catItems = items.filter(i => i.category === cat);
-    const matSub = catItems.reduce((s,i) => s+i.subtotal, 0);
-    const total = matSub + (labors[cat].val||0);
-    const st = document.getElementById('sec-total-'+key);
-    if (st) st.textContent = fmtBRL(total);
-    const sl = document.getElementById('sec-labor-'+key);
-    if (sl) sl.textContent = labors[cat].val > 0 ? fmtBRL(labors[cat].val) : '';
-  }
+function updateLabor(secId, field, val) {
+  if (!labors[secId]) labors[secId] = {desc:'', val:0};
+  if (field === 'val') labors[secId].val = parseFloat(val.replace(',','.')) || 0;
+  else labors[secId].desc = val;
+  const secItems = items.filter(i => i.section_id === secId);
+  const matSub = secItems.reduce((s,i) => s+i.subtotal, 0);
+  const total = matSub + (labors[secId].val||0);
+  const st = document.getElementById('sec-total-'+secId);
+  if (st) st.textContent = fmtBRL(total);
+  const sl = document.getElementById('sec-labor-'+secId);
+  if (sl) sl.textContent = labors[secId].val > 0 ? fmtBRL(labors[secId].val) : '';
   updateTotals();
+}
+
+function renameSection(secId) {
+  const sec = sections.find(s => s.id === secId);
+  if (!sec) return;
+  const newName = prompt('Nome da seção:', sec.name);
+  if (newName && newName.trim()) {
+    sec.name = newName.trim();
+    sec.custom = true;
+    const el = document.getElementById('sectitle-'+secId);
+    if (el) el.textContent = '📁 ' + sec.name;
+  }
+}
+
+function removeSection(secId) {
+  const secItems = items.filter(i => i.section_id === secId);
+  if (secItems.length > 0 && !confirm('Remover esta seção e todos os seus itens?')) return;
+  items = items.filter(i => i.section_id !== secId);
+  sections = sections.filter(s => s.id !== secId);
+  delete labors[secId];
+  renderCart();
 }
 
 function getTotalLabor() {
   return Object.values(labors).reduce((s,l) => s + (l.val||0), 0);
+}
+
+function addSectionForCat(category) {
+  const count = sections.filter(s => s.category === category).length + 1;
+  const sec = { id: newSectionId(), name: category + ' ' + count, category, custom: true };
+  sections.push(sec);
+  // add first item from category to new section automatically
+  // just create empty section, user adds items manually
+  renderCart();
+  // open cart on mobile
+  if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
 }
 
 function updateTotals() {
@@ -537,21 +608,21 @@ function compartilhar() {
   if (note) lines.push(`📝 ${note}`);
   if (phone) lines.push(`📞 ${phone}`);
   lines.push(`👤 ${client}`, '');
-  const cats = [...new Set(items.map(i => i.category))];
-  cats.forEach(cat => {
-    lines.push(`*${cat}:*`);
-    const catItems = items.filter(i => i.category === cat);
-    catItems.forEach(item => {
+  const activeSecs = sections.filter(s => items.some(i => i.section_id === s.id));
+  activeSecs.forEach(sec => {
+    lines.push(`*${sec.name}:*`);
+    const secItems = items.filter(i => i.section_id === sec.id);
+    secItems.forEach(item => {
       const u = UNIT[item.unit]||item.unit;
       let q = item.unit==='m2' ? `${item.width}×${item.length}m = ${item.qty.toFixed(3)} m²`
             : item.unit==='m3' ? `${item.width}×${item.length}×${item.height}m = ${item.qty.toFixed(3)} m³`
             : `${item.qty} ${u}`;
       lines.push(`• ${item.material_name}: ${q} → ${fmtBRL(item.subtotal)}`);
     });
-    const lab = labors[cat];
+    const lab = labors[sec.id];
     if (lab && lab.val > 0) lines.push(`🔧 M.O.${lab.desc?' ('+lab.desc+')':''}: ${fmtBRL(lab.val)}`);
-    const catMat = catItems.reduce((s,i) => s+i.subtotal, 0);
-    lines.push(`_Subtotal: ${fmtBRL(catMat + (lab&&lab.val||0))}_`, '');
+    const secMat = secItems.reduce((s,i) => s+i.subtotal, 0);
+    lines.push(`_Subtotal: ${fmtBRL(secMat + (lab&&lab.val||0))}_`, '');
   });
   const mat = items.reduce((s,i) => s+i.subtotal, 0);
   lines.push(`*TOTAL: ${fmtBRL(mat+getTotalLabor())}*`);
@@ -573,11 +644,14 @@ async function submitSale(orcamento) {
     labor_desc: Object.entries(labors).filter(([,l])=>l.val>0).map(([cat,l])=>`${cat}: ${l.desc||'M.O.'}`).join(' | '),
     labors,
     orcamento,
-    items: items.map(i => ({
-      material_id: i.material_id, material_name: i.material_name,
-      category: i.category,
-      unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
-    }))
+    items: items.map(i => {
+      const sec = sections.find(s => s.id === i.section_id);
+      return {
+        material_id: i.material_id, material_name: i.material_name,
+        category: i.category, section_name: sec ? sec.name : i.category,
+        unit: i.unit, qty: i.qty, unit_price: i.unit_price, subtotal: i.subtotal,
+      };
+    })
   };
   const saleId = document.getElementById('saleId').value;
   const url = saleId ? `/vendas/${saleId}/editar` : '/vendas/nova';
