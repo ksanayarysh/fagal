@@ -507,10 +507,11 @@ function renderCart() {
           <span onclick="toggleSection('${secKey}')" style="cursor:pointer;">
             <span class="cart-section-arrow" id="arrow-${secKey}">▼</span>
           </span>
-          <span class="cart-section-title" id="sectitle-${secKey}"
-                onclick="setActiveSection('${sec.id}')"
-                title="Clique para ativar esta seção">📁 ${sec.name}</span>
-          ${activeSectionId === sec.id ? '<span class="active-section-indicator">ativo</span>' : ''}
+          <span class="cart-section-title" id="sectitle-${secKey}">📁 ${sec.name}</span>
+          ${activeSectionId === sec.id
+            ? '<span class="active-section-indicator">ativo</span>'
+            : '<button onclick="setActiveSection(\'' + sec.id + '\')" title="Ativar esta seção" style="background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:.7rem;padding:1px 7px;border-radius:10px;font-weight:700;">ativar</button>'
+          }
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="cart-section-subtotal" id="sec-total-${secKey}">${fmtBRL(totalSec)}</span>
