@@ -372,7 +372,15 @@ function addItem(matId) {
     renderCart();
     return;
   }
-  const sec = getOrCreateSection(mat.category);
+  // if multiple sections for this category, use the last one (most recently active)
+  let sec;
+  const catSections = sections.filter(s => s.category === mat.category);
+  if (catSections.length > 1) {
+    // use last section for this category
+    sec = catSections[catSections.length - 1];
+  } else {
+    sec = getOrCreateSection(mat.category);
+  }
   items.push({
     id: Date.now(),
     section_id: sec.id,
@@ -402,8 +410,8 @@ function renderCart() {
     return;
   }
 
-  // group by sections (preserving order)
-  const activeSections = sections.filter(s => items.some(i => i.section_id === s.id));
+  // group by sections (preserving order) - show all sections
+  const activeSections = sections;
 
   el.innerHTML = activeSections.map(sec => {
     const cat = sec.category;
@@ -585,11 +593,17 @@ function addSectionForCat(category) {
   const count = sections.filter(s => s.category === category).length + 1;
   const sec = { id: newSectionId(), name: category + ' ' + count, category, custom: true };
   sections.push(sec);
-  // add first item from category to new section automatically
-  // just create empty section, user adds items manually
   renderCart();
-  // open cart on mobile
+  // filter left panel to this category so user can add items
+  activeCategory = category;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  const key = category.replace(/ /g,'_');
+  const pill = document.getElementById('pill-'+key);
+  if (pill) pill.classList.add('active');
+  filterMaterials(document.getElementById('matSearch').value);
   if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
+  // prompt rename immediately
+  setTimeout(() => renameSection(sec.id), 100);
 }
 
 function updateTotals() {
