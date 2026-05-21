@@ -530,7 +530,7 @@ function compartilhar() {
   const note = document.getElementById('noteField').value.trim();
   const address = document.getElementById('addressField').value.trim();
   const phone = document.getElementById('phoneField').value.trim();
-  const labor = getLabor();
+  const labor = getTotalLabor();
   const laborDesc = document.getElementById('laborDesc').value.trim();
   let lines = ['*Orçamento FAGAL*'];
   if (address) lines.push(`📍 ${address}`);
@@ -562,7 +562,7 @@ async function submitSale(orcamento) {
   const client = document.getElementById('clientName').value.trim();
   if (!client) { alert('Informe o nome do cliente!'); document.getElementById('clientName').focus(); return; }
   if (!items.length) { alert('Adicione pelo menos um material!'); return; }
-  const labor = getLabor();
+  const labor = getTotalLabor();
   const payload = {
     client,
     phone: document.getElementById('phoneField').value.trim(),
