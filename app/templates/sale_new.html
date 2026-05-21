@@ -401,9 +401,8 @@ function renderMatList(list) {
 function addItem(matId) {
   const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-  // only increment if same section exists (default section for category)
-  const defaultSec = sections.find(s => s.category === mat.category && !s.custom);
-  const existing = defaultSec ? items.find(i => i.material_id == matId && i.section_id === defaultSec.id) : null;
+  // increment if same material already in active section
+  const existing = activeSectionId ? items.find(i => i.material_id == matId && i.section_id === activeSectionId) : null;
   if (existing) {
     if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
     else if (existing.unit === 'm3') { existing.length += 1; existing.qty = existing.length * existing.width * existing.height; }
