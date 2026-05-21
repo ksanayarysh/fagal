@@ -146,6 +146,25 @@
 @media (max-width: 768px) {
   .sale-layout { grid-template-columns: 1fr; }
 
+  /* labor row wraps on small screens */
+  .cart-section-labor { flex-wrap: wrap; }
+  .cart-section-labor input { min-width: 80px; }
+
+  /* dim inputs smaller on mobile */
+  .cart-dim input { width: 58px !important; }
+  .cart-dim { flex-wrap: wrap; gap: 4px; }
+
+  /* section header buttons don't overflow */
+  .cart-section-header { gap: 4px; }
+
+  /* new section form full width */
+  #newSectionForm { flex-wrap: nowrap; }
+  #newSectionInput { font-size: .85rem; }
+
+  /* page header compact */
+  .page-header { margin-bottom: 12px; }
+  .page-header .btn { padding: 7px 12px; font-size: .8rem; }
+
   .cart-panel {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -205,7 +224,7 @@
   <!-- RIGHT: cart -->
   <div class="cart-panel" id="cartPanel">
     <input type="hidden" id="saleId" value="{{ edit_sale_id or '' }}">
-    <div class="cart-header" onclick="toggleCartMobile()">
+    <div class="cart-header" onclick="if(window.innerWidth<=768)document.getElementById('cartPanel').classList.toggle('open')">
       🛒 Carrinho
       <span class="cart-badge" id="cartCount">0</span>
     </div>
@@ -305,6 +324,10 @@ function toggleCartMobile() {
   if (window.innerWidth <= 768) {
     document.getElementById('cartPanel').classList.toggle('open');
   }
+}
+// open cart on mobile when item added
+function openCartMobile() {
+  if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
 }
 
 /* ─── MATERIAL LIST ─── */
@@ -626,6 +649,18 @@ function addNewSection() {
   if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
 }
 
+
+function toggleNewSectionForm() {
+  const form = document.getElementById('newSectionForm');
+  const visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'flex';
+  if (!visible) {
+    const inp = document.getElementById('newSectionInput');
+    inp.value = 'Seção ' + (sections.length + 1);
+    inp.focus();
+    inp.select();
+  }
+}
 
 function addSectionForCat(category) {
   addNewSection();
