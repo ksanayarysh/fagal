@@ -753,8 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('phoneField').value = prefill.phone || '';
     document.getElementById('addressField').value = prefill.address || '';
     document.getElementById('noteField').value = prefill.note || '';
-    document.getElementById('laborDesc').value = prefill.labor_desc || '';
-    if (prefill.labor) document.getElementById('laborVal').value = prefill.labor;
+    // labor is now per-section, restored via labors object below
     if (prefill.items) {
       // restore sections from section_name on items
       const secNames = [...new Set(prefill.items.map(i => i.section_name || i.category || 'Geral'))];
