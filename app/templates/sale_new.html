@@ -110,12 +110,18 @@
 .cart-section:last-child { border-bottom: none; }
 .cart-section-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 18px;
+  padding: 10px 18px;
   background: var(--surface2);
-  font-size: .78rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: var(--muted);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  user-select: none;
 }
-.cart-section-subtotal { font-family: var(--mono); color: var(--accent); font-size: .88rem; }
+.cart-section-title { font-size: .92rem; font-weight: 800; color: var(--text); letter-spacing: .01em; }
+.cart-section-arrow { font-size: .75rem; color: var(--muted); transition: transform .2s; }
+.cart-section-arrow.collapsed { transform: rotate(-90deg); }
+.cart-section-subtotal { font-family: var(--mono); color: var(--accent); font-size: .95rem; font-weight: 700; }
+.cart-section-body { }
+.cart-section-body.collapsed { display: none; }
 .cart-section-labor {
   padding: 8px 18px 10px;
   border-top: 1px dashed var(--border);
@@ -260,9 +266,14 @@ function toggleCartMobile() {
 function buildCatPills() {
   const cats = ['Todos', ...new Set(materials.map(m => m.category))];
   const el = document.getElementById('catPills');
-  el.innerHTML = cats.map(c =>
-    `<span class="cat-pill${c==='Todos'?' active':''}" onclick="selectCat('${c}')">${c}</span>`
-  ).join('');
+  el.innerHTML = cats.map(c => {
+    if (c === 'Todos') return `<span class="cat-pill active" onclick="selectCat('Todos')" id="pill-Todos">Todos</span>`;
+    const key = c.replace(/ /g,'_');
+    return `<span class="cat-pill" id="pill-${key}" style="display:inline-flex;align-items:center;gap:0;padding:0;overflow:hidden;border-radius:20px;">
+      <span onclick="selectCat('${c}')" style="padding:6px 12px;cursor:pointer;">📁 ${c}</span>
+      <span onclick="addAllFromCat('${c}')" title="Adicionar todos os materiais desta categoria" style="padding:6px 10px;border-left:1px solid rgba(255,255,255,.15);cursor:pointer;font-weight:800;" >＋</span>
+    </span>`;
+  }).join('');
 }
 
 function selectCat(cat) {
@@ -280,6 +291,11 @@ function filterMaterials(q) {
   document.getElementById('resultsLabel').textContent =
     `${filtered.length} material${filtered.length!==1?'is':''}${activeCategory?' · '+activeCategory:''}`;
   renderMatList(filtered);
+}
+
+function addAllFromCat(cat) {
+  const catMats = materials.filter(m => m.category === cat);
+  catMats.forEach(m => addItem(m.id));
 }
 
 function renderMatList(list) {
@@ -399,11 +415,16 @@ function renderCart() {
       </div>`;
     }).join('');
 
+    const catKey = cat.replace(/[^a-zA-Z0-9]/g,'_');
     return `<div class="cart-section" data-cat="${cat}">
-      <div class="cart-section-header">
-        <span>📁 ${cat}</span>
-        <span class="cart-section-subtotal" id="sec-total-${cat.replace(/\s/g,'_')}">${fmtBRL(totalSec)}</span>
+      <div class="cart-section-header" onclick="toggleSection('${catKey}')">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="cart-section-arrow" id="arrow-${catKey}">▼</span>
+          <span class="cart-section-title">📁 ${cat}</span>
+        </div>
+        <span class="cart-section-subtotal" id="sec-total-${catKey}">${fmtBRL(totalSec)}</span>
       </div>
+      <div class="cart-section-body" id="body-${catKey}">
       ${rows}
       <div class="cart-section-labor">
         <span class="cart-section-labor-label">🔧 M.O.:</span>
@@ -419,7 +440,8 @@ function renderCart() {
                oninput="updateLabor('${cat}','desc',this.value)"
                style="font-size:.85rem;padding:5px 8px;">
         <span class="cart-section-labor-val" id="sec-labor-${cat.replace(/\s/g,'_')}">${lab.val>0?fmtBRL(lab.val):''}</span>
-      </div>
+        </div>
+    </div>
     </div>`;
   }).join('');
 
@@ -465,6 +487,13 @@ function updateQty(id, val) {
 function removeItem(id) {
   items = items.filter(i => i.id!==id);
   renderCart();
+}
+
+function toggleSection(catKey) {
+  const body = document.getElementById('body-'+catKey);
+  const arrow = document.getElementById('arrow-'+catKey);
+  if (body) body.classList.toggle('collapsed');
+  if (arrow) arrow.classList.toggle('collapsed');
 }
 
 function updateLabor(cat, field, val) {
