@@ -134,8 +134,8 @@ async def edit_sale_page(request: Request, sale_id: int):
             "unit_price": float(i["unit_price"]),
             "qty": float(i["qty"]),
             "subtotal": float(i["subtotal"]),
-            "length": 1, "width": float(i["qty"]) if i["unit"] != "m2" else 1,
-            "height": 1,
+            "section_name": i["section_name"] if i["section_name"] else i["material_name"],
+            "length": 1, "width": 1, "height": 1,
         } for i in sale_items]
     }
     return templates.TemplateResponse("sale_new.html", {

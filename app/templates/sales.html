@@ -75,8 +75,12 @@ function filterSales(q) {
         <td class="text-muted" style="white-space:nowrap;font-size:.82rem;">
           {{ s.created_at.strftime('%d/%m/%Y %H:%M') }}
         </td>
-        <td onclick="event.stopPropagation()">
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;">
           <a href="/vendas/{{ s.id }}" class="btn btn-secondary btn-sm">Ver</a>
+          <form method="post" action="/vendas/{{ s.id }}/delete" style="display:inline"
+                onsubmit="return confirm('Excluir venda #{{ s.id }}?')">
+            <button type="submit" class="btn btn-danger btn-sm">✕</button>
+          </form>
         </td>
       </tr>
       {% endfor %}

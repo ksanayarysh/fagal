@@ -377,7 +377,6 @@ function renderMatList(list) {
     const catHeader = hasSections
       ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;border-top:1px solid var(--border);">'
         + '<span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">' + cat + '</span>'
-        + '<button onclick="addSectionForCat(\'' + cat + '\')" style="background:none;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Nova seção ' + cat + '</button>'
         + '</div>'
       : '';
     return catHeader + catMats.map(m => {
@@ -756,18 +755,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('laborDesc').value = prefill.labor_desc || '';
     if (prefill.labor) document.getElementById('laborVal').value = prefill.labor;
     if (prefill.items) {
-      items = prefill.items.map(i => ({
-        id: Date.now() + Math.random(),
-        material_id: i.material_id,
-        material_name: i.material_name,
-        unit: i.unit,
-        unit_price: i.unit_price,
-        length: i.length || 1,
-        width: i.width || 1,
-        height: i.height || 1,
-        qty: i.qty,
-        subtotal: i.subtotal,
-      }));
+      // restore sections from section_name on items
+      const secNames = [...new Set(prefill.items.map(i => i.section_name || i.category || 'Geral'))];
+      secNames.forEach(name => {
+        const sec = { id: newSectionId(), name, category: name, custom: true };
+        sections.push(sec);
+        labors[sec.id] = { desc: '', val: 0 };
+      });
+      if (sections.length > 0) activeSectionId = sections[0].id;
+
+      items = prefill.items.map(i => {
+        const secName = i.section_name || i.category || 'Geral';
+        const sec = sections.find(s => s.name === secName);
+        return {
+          id: Date.now() + Math.random(),
+          section_id: sec ? sec.id : (sections[0] ? sections[0].id : null),
+          material_id: i.material_id,
+          material_name: i.material_name,
+          category: i.category || secName,
+          unit: i.unit,
+          unit_price: i.unit_price,
+          length: i.length || 1,
+          width: i.width || 1,
+          height: i.height || 1,
+          qty: i.qty,
+          subtotal: i.subtotal,
+        };
+      });
     }
     updateTotals();
   }
