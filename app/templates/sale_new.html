@@ -748,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildCatPills();
   filterMaterials('');
   if (prefill) {
+    console.log('prefill:', JSON.stringify(prefill).substring(0,200));
     document.getElementById('clientName').value = prefill.client || '';
     document.getElementById('phoneField').value = prefill.phone || '';
     document.getElementById('addressField').value = prefill.address || '';
