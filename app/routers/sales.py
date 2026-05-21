@@ -81,10 +81,11 @@ async def create_sale(request: Request):
             qty = float(item["qty"])
             await conn.execute(
                 """INSERT INTO sale_items
-                   (sale_id, material_id, material_name, unit, qty, unit_price, subtotal)
-                   VALUES ($1,$2,$3,$4,$5,$6,$7)""",
+                   (sale_id, material_id, material_name, unit, qty, unit_price, subtotal, section_name)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8)""",
                 sale_id, mid, item["material_name"], item["unit"],
                 qty, float(item["unit_price"]), round(float(item["subtotal"]), 2),
+                item.get("section_name") or None,
             )
             # deduct from stock only for real sales, not orçamentos
             if mid and not orcamento:
@@ -194,10 +195,11 @@ async def update_sale(request: Request, sale_id: int):
             qty = float(item["qty"])
             await conn.execute(
                 """INSERT INTO sale_items
-                   (sale_id, material_id, material_name, unit, qty, unit_price, subtotal)
-                   VALUES ($1,$2,$3,$4,$5,$6,$7)""",
+                   (sale_id, material_id, material_name, unit, qty, unit_price, subtotal, section_name)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8)""",
                 sale_id, mid, item["material_name"], item["unit"],
                 qty, float(item["unit_price"]), round(float(item["subtotal"]), 2),
+                item.get("section_name") or None,
             )
             if mid and not orcamento:
                 await conn.execute(
