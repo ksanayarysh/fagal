@@ -354,6 +354,7 @@ function renderMatList(list) {
       </button>
     </div>`;
   }).join('');
+  }).join('');
 }
 
 /* ─── CART ─── */
@@ -484,12 +485,11 @@ function renderCart() {
                value="${lab.desc||''}"
                oninput="updateLabor('${sec.id}','desc',this.value)"
                style="font-size:.85rem;padding:5px 8px;">
-        <span class="cart-section-labor-val" id="sec-labor-${cat.replace(/\s/g,'_')}">${lab.val>0?fmtBRL(lab.val):''}</span>
+        <span class="cart-section-labor-val" id="sec-labor-${secKey}">${lab.val>0?fmtBRL(lab.val):''}</span>
         </div>
     </div>
     </div>`;
     }).join('');
-  }).join('');
 
   updateTotals();
 }
