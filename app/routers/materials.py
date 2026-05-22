@@ -16,7 +16,7 @@ async def list_materials(request: Request):
         return RedirectResponse("/login")
     pool = request.app.state.db
     rows = await pool.fetch(
-        "SELECT * FROM materials WHERE active=TRUE ORDER BY category, name"
+        "SELECT id, name, category, unit, price, purchase_price, qty_stock, active FROM materials WHERE active=TRUE ORDER BY category, name"
     )
     # group by category
     cats = {}
@@ -35,13 +35,15 @@ async def add_material(
     category: str = Form(...),
     unit: str = Form(...),
     price: float = Form(...),
+    purchase_price: float = Form(None),
 ):
     if not is_authenticated(request):
         return RedirectResponse("/login")
     pool = request.app.state.db
     await pool.execute(
-        "INSERT INTO materials (name, category, unit, price) VALUES ($1,$2,$3,$4)",
-        name.strip(), category.strip(), unit, round(price, 2)
+        "INSERT INTO materials (name, category, unit, price, purchase_price) VALUES ($1,$2,$3,$4,$5)",
+        name.strip(), category.strip(), unit, round(price, 2),
+        round(purchase_price, 2) if purchase_price else None
     )
     return RedirectResponse("/materiais", status_code=303)
 
@@ -52,13 +54,15 @@ async def edit_material(
     category: str = Form(...),
     unit: str = Form(...),
     price: float = Form(...),
+    purchase_price: float = Form(None),
 ):
     if not is_authenticated(request):
         return RedirectResponse("/login")
     pool = request.app.state.db
     await pool.execute(
-        "UPDATE materials SET name=$1, category=$2, unit=$3, price=$4 WHERE id=$5",
-        name.strip(), category.strip(), unit, round(price, 2), mid
+        "UPDATE materials SET name=$1, category=$2, unit=$3, price=$4, purchase_price=$5 WHERE id=$6",
+        name.strip(), category.strip(), unit, round(price, 2),
+        round(purchase_price, 2) if purchase_price else None, mid
     )
     return RedirectResponse("/materiais", status_code=303)
 
@@ -82,5 +86,7 @@ async def api_materials(request: Request):
     for r in rows:
         d = dict(r)
         d.pop("created_at", None)
+        if d.get("purchase_price") is not None:
+            d["purchase_price"] = float(d["purchase_price"])
         result.append(d)
     return result

@@ -122,6 +122,17 @@
 .cart-section-subtotal { font-family: var(--mono); color: var(--accent); font-size: .95rem; font-weight: 700; }
 .cart-section-body { }
 .cart-section-body.collapsed { display: none; }
+.cart-section.active-section > .cart-section-header {
+  border-left-color: var(--green);
+}
+.cart-section.active-section > .cart-section-header .cart-section-title {
+  color: var(--green);
+}
+.active-section-indicator {
+  font-size: .7rem; color: var(--green); font-weight: 700;
+  padding: 1px 6px; border: 1px solid var(--green);
+  border-radius: 10px; margin-left: 4px;
+}
 .cart-section-labor {
   padding: 8px 18px 10px;
   border-top: 1px dashed var(--border);
@@ -134,6 +145,25 @@
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   .sale-layout { grid-template-columns: 1fr; }
+
+  /* labor row wraps on small screens */
+  .cart-section-labor { flex-wrap: wrap; }
+  .cart-section-labor input { min-width: 80px; }
+
+  /* dim inputs smaller on mobile */
+  .cart-dim input { width: 58px !important; }
+  .cart-dim { flex-wrap: wrap; gap: 4px; }
+
+  /* section header buttons don't overflow */
+  .cart-section-header { gap: 4px; }
+
+  /* new section form full width */
+  #newSectionForm { flex-wrap: nowrap; }
+  #newSectionInput { font-size: .85rem; }
+
+  /* page header compact */
+  .page-header { margin-bottom: 12px; }
+  .page-header .btn { padding: 7px 12px; font-size: .8rem; }
 
   .cart-panel {
     position: fixed;
@@ -186,7 +216,6 @@
         </div>
         <div class="results-label" id="resultsLabel"></div>
       </div>
-      <div class="cat-pills" id="catPills"></div>
       <div id="matList"></div>
     </div>
   </div>
@@ -194,7 +223,7 @@
   <!-- RIGHT: cart -->
   <div class="cart-panel" id="cartPanel">
     <input type="hidden" id="saleId" value="{{ edit_sale_id or '' }}">
-    <div class="cart-header" onclick="toggleCartMobile()">
+    <div class="cart-header" onclick="if(window.innerWidth<=768)document.getElementById('cartPanel').classList.toggle('open')">
       🛒 Carrinho
       <span class="cart-badge" id="cartCount">0</span>
     </div>
@@ -210,6 +239,18 @@
       </div>
     </div>
 
+    <div style="padding:8px 18px;border-bottom:1px solid var(--border);">
+      <button onclick="toggleNewSectionForm()" class="btn btn-secondary btn-sm" style="width:100%;">
+        ＋ Nova seção
+      </button>
+      <div id="newSectionForm" style="display:none;gap:6px;margin-top:8px;">
+        <input type="text" id="newSectionInput" class="form-control"
+               placeholder="Nome da seção..."
+               onkeydown="if(event.key==='Enter')addNewSection();if(event.key==='Escape')toggleNewSectionForm();"
+               style="flex:1;">
+        <button onclick="addNewSection()" class="btn btn-primary btn-sm">OK</button>
+      </div>
+    </div>
     <div class="cart-items" id="cartItems">
       <div class="cart-empty">Adicione materiais da lista</div>
     </div>
@@ -243,6 +284,7 @@ const materials = {{ materials | tojson }};
 let items = [];          // each item has section_id
 let sections = [];       // [{id, name, category}]
 let labors = {};         // { section_id: { desc, val } }
+let activeSectionId = null; // which section gets new items
 let activeCategory = null;
 let sectionCounter = 0;
 
@@ -282,6 +324,10 @@ function toggleCartMobile() {
     document.getElementById('cartPanel').classList.toggle('open');
   }
 }
+// open cart on mobile when item added
+function openCartMobile() {
+  if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
+}
 
 /* ─── MATERIAL LIST ─── */
 function buildCatPills() {
@@ -290,10 +336,7 @@ function buildCatPills() {
   el.innerHTML = cats.map(c => {
     if (c === 'Todos') return `<span class="cat-pill active" onclick="selectCat('Todos')" id="pill-Todos">Todos</span>`;
     const key = c.replace(/ /g,'_');
-    return `<span class="cat-pill" id="pill-${key}" style="display:inline-flex;align-items:center;gap:0;padding:0;overflow:hidden;border-radius:20px;">
-      <span onclick="selectCat('${c}')" style="padding:6px 12px;cursor:pointer;">📁 ${c}</span>
-      <span onclick="addAllFromCat('${c}')" title="Adicionar todos os materiais desta categoria" style="padding:6px 10px;border-left:1px solid rgba(255,255,255,.15);cursor:pointer;font-weight:800;" >＋</span>
-    </span>`;
+    return `<span class="cat-pill" id="pill-${key}" onclick="selectCat('${c}')">📁 ${c}</span>`;
   }).join('');
 }
 
@@ -333,12 +376,10 @@ function renderMatList(list) {
     const catHeader = hasSections
       ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px;border-top:1px solid var(--border);">'
         + '<span style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">' + cat + '</span>'
-        + '<button onclick="addSectionForCat(\'' + cat + '\')" style="background:none;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;">+ Nova seção ' + cat + '</button>'
         + '</div>'
       : '';
     return catHeader + catMats.map(m => {
     const u = UNIT[m.unit]||m.unit;
-    const inCart = items.some(i => i.material_id == m.id);
     const stockHtml = m.qty_stock > 0
       ? `<span class="mat-stock-ok">▲ ${Number.isInteger(m.qty_stock)?m.qty_stock:m.qty_stock.toFixed(2)} ${u}</span>`
       : `<span class="mat-stock-no">sem estoque</span>`;
@@ -348,10 +389,7 @@ function renderMatList(list) {
         <div class="mat-row-cat">${m.category} · ${stockHtml}</div>
       </div>
       <span class="mat-row-price">${fmtBRL(m.price)}/${u}</span>
-      <button class="add-btn${inCart?' in-cart':''}" onclick="addItem(${m.id})"
-              style="${inCart?'background:var(--accent);color:#111;border-color:var(--accent);':''}">
-        ${inCart?'✓ No carrinho':'+ Carrinho'}
-      </button>
+      <button class="add-btn" onclick="addItem(${m.id})">+ Carrinho</button>
     </div>`;
   }).join('');
   }).join('');
@@ -361,9 +399,8 @@ function renderMatList(list) {
 function addItem(matId) {
   const mat = materials.find(m => m.id == matId);
   if (!mat) return;
-  // only increment if same section exists (default section for category)
-  const defaultSec = sections.find(s => s.category === mat.category && !s.custom);
-  const existing = defaultSec ? items.find(i => i.material_id == matId && i.section_id === defaultSec.id) : null;
+  // increment if same material already in active section
+  const existing = activeSectionId ? items.find(i => i.material_id == matId && i.section_id === activeSectionId) : null;
   if (existing) {
     if (existing.unit === 'm2') { existing.length += 1; existing.qty = existing.length * existing.width; }
     else if (existing.unit === 'm3') { existing.length += 1; existing.qty = existing.length * existing.width * existing.height; }
@@ -372,14 +409,14 @@ function addItem(matId) {
     renderCart();
     return;
   }
-  // if multiple sections for this category, use the last one (most recently active)
+  // use active section if set, otherwise getOrCreate for this category
   let sec;
-  const catSections = sections.filter(s => s.category === mat.category);
-  if (catSections.length > 1) {
-    // use last section for this category
-    sec = catSections[catSections.length - 1];
-  } else {
+  if (activeSectionId) {
+    sec = sections.find(s => s.id === activeSectionId);
+  }
+  if (!sec) {
     sec = getOrCreateSection(mat.category);
+    if (!activeSectionId) activeSectionId = sec.id;
   }
   items.push({
     id: Date.now(),
@@ -404,7 +441,7 @@ function renderCart() {
   document.getElementById('cartCount').textContent = items.length;
   filterMaterials(document.getElementById('matSearch').value);
 
-  if (!items.length) {
+  if (!items.length && !sections.length) {
     el.innerHTML = '<div class="cart-empty">Adicione materiais da lista</div>';
     updateTotals();
     return;
@@ -464,11 +501,15 @@ function renderCart() {
     const secKey = sec.id;
     return `<div class="cart-section" data-sec="${sec.id}">
       <div class="cart-section-header">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;" onclick="toggleSection('${secKey}')">
-          <span class="cart-section-arrow" id="arrow-${secKey}">▼</span>
-          <span class="cart-section-title" id="sectitle-${secKey}"
-                ondblclick="renameSection('${sec.id}')"
-                title="Duplo clique para renomear">📁 ${sec.name}</span>
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+          <span onclick="toggleSection('${secKey}')" style="cursor:pointer;">
+            <span class="cart-section-arrow" id="arrow-${secKey}">▼</span>
+          </span>
+          <span class="cart-section-title" id="sectitle-${secKey}">📁 ${sec.name}</span>
+          ${activeSectionId === sec.id
+            ? '<span class="active-section-indicator">ativo</span>'
+            : '<button onclick="setActiveSection(\'' + sec.id + '\')" title="Ativar esta seção" style="background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:.7rem;padding:1px 7px;border-radius:10px;font-weight:700;">ativar</button>'
+          }
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="cart-section-subtotal" id="sec-total-${secKey}">${fmtBRL(totalSec)}</span>
@@ -476,6 +517,7 @@ function renderCart() {
                   style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 4px;">✏️</button>
           <button onclick="removeSection('${sec.id}')" title="Remover seção"
                   style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:2px 4px;">🗑</button>
+
         </div>
       </div>
       <div class="cart-section-body" id="body-${secKey}">
@@ -543,6 +585,11 @@ function removeItem(id) {
   renderCart();
 }
 
+function setActiveSection(secId) {
+  activeSectionId = secId;
+  renderCart();
+}
+
 function toggleSection(secKey) {
   const body = document.getElementById('body-'+secKey);
   const arrow = document.getElementById('arrow-'+secKey);
@@ -589,21 +636,36 @@ function getTotalLabor() {
   return Object.values(labors).reduce((s,l) => s + (l.val||0), 0);
 }
 
-function addSectionForCat(category) {
-  const count = sections.filter(s => s.category === category).length + 1;
-  const sec = { id: newSectionId(), name: category + ' ' + count, category, custom: true };
+function addNewSection() {
+  const inp = document.getElementById('newSectionInput');
+  if (!inp) return;
+  const name = inp.value.trim();
+  if (!name) { inp.focus(); return; }
+  const sec = { id: newSectionId(), name, category: name, custom: true };
   sections.push(sec);
+  labors[sec.id] = { desc: '', val: 0 };
+  activeSectionId = sec.id;
+  inp.value = '';
+  document.getElementById('newSectionForm').style.display = 'none';
   renderCart();
-  // filter left panel to this category so user can add items
-  activeCategory = category;
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-  const key = category.replace(/ /g,'_');
-  const pill = document.getElementById('pill-'+key);
-  if (pill) pill.classList.add('active');
-  filterMaterials(document.getElementById('matSearch').value);
   if (window.innerWidth <= 768) document.getElementById('cartPanel').classList.add('open');
-  // prompt rename immediately
-  setTimeout(() => renameSection(sec.id), 100);
+}
+
+
+function toggleNewSectionForm() {
+  const form = document.getElementById('newSectionForm');
+  const visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'flex';
+  if (!visible) {
+    const inp = document.getElementById('newSectionInput');
+    inp.value = 'Seção ' + (sections.length + 1);
+    inp.focus();
+    inp.select();
+  }
+}
+
+function addSectionForCat(category) {
+  addNewSection();
 }
 
 function updateTotals() {
@@ -682,28 +744,42 @@ const prefill = {{ prefill | tojson }};
 
 // ── INIT after DOM ready ──
 document.addEventListener('DOMContentLoaded', () => {
-  buildCatPills();
   filterMaterials('');
   if (prefill) {
+    console.log('prefill:', JSON.stringify(prefill).substring(0,200));
     document.getElementById('clientName').value = prefill.client || '';
     document.getElementById('phoneField').value = prefill.phone || '';
     document.getElementById('addressField').value = prefill.address || '';
     document.getElementById('noteField').value = prefill.note || '';
-    document.getElementById('laborDesc').value = prefill.labor_desc || '';
-    if (prefill.labor) document.getElementById('laborVal').value = prefill.labor;
+    // labor is now per-section, restored via labors object below
     if (prefill.items) {
-      items = prefill.items.map(i => ({
-        id: Date.now() + Math.random(),
-        material_id: i.material_id,
-        material_name: i.material_name,
-        unit: i.unit,
-        unit_price: i.unit_price,
-        length: i.length || 1,
-        width: i.width || 1,
-        height: i.height || 1,
-        qty: i.qty,
-        subtotal: i.subtotal,
-      }));
+      // restore sections from section_name on items
+      const secNames = [...new Set(prefill.items.map(i => i.section_name || i.category || 'Geral'))];
+      secNames.forEach(name => {
+        const sec = { id: newSectionId(), name, category: name, custom: true };
+        sections.push(sec);
+        labors[sec.id] = { desc: '', val: 0 };
+      });
+      if (sections.length > 0) activeSectionId = sections[0].id;
+
+      items = prefill.items.map(i => {
+        const secName = i.section_name || i.category || 'Geral';
+        const sec = sections.find(s => s.name === secName);
+        return {
+          id: Date.now() + Math.random(),
+          section_id: sec ? sec.id : (sections[0] ? sections[0].id : null),
+          material_id: i.material_id,
+          material_name: i.material_name,
+          category: i.category || secName,
+          unit: i.unit,
+          unit_price: i.unit_price,
+          length: i.length || 1,
+          width: i.width || 1,
+          height: i.height || 1,
+          qty: i.qty,
+          subtotal: i.subtotal,
+        };
+      });
     }
     updateTotals();
   }

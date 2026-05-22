@@ -88,6 +88,8 @@ async def run_migrations(pool):
             )
         """)
         await conn.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS address TEXT")
+        await conn.execute("ALTER TABLE materials ADD COLUMN IF NOT EXISTS purchase_price NUMERIC(10,2)")
+        await conn.execute("ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS section_name TEXT")
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
