@@ -37,11 +37,12 @@
           <span class="text-muted" style="font-size:.85rem;"> {{ m.unit_label }}</span>
         </td>
         <td class="text-mono">R$ {{ "%.2f"|format(m.price) }}</td>
-        <td>
-          <button class="btn btn-secondary btn-sm"
-            data-id="{{ m.id }}" data-name="{{ m.name }}"
-            data-stock="{{ m.qty_stock }}" data-unit="{{ m.unit_label }}"
-            onclick="openAdjust(this)">Ajustar</button>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-primary btn-sm"
+            data-id="{{ m.id }}" data-name="{{ m.name }}" data-unit="{{ m.unit_label }}"
+            onclick="openBuyFor(this)">+ Entrada</button>
+          <button class="btn btn-secondary btn-sm" style="margin-left:4px;"
+            onclick="toggleHistory('hist-{{ m.id }}')">Histórico</button>
         </td>
       </tr>
       {% endfor %}
@@ -59,14 +60,32 @@
       <div class="stock-card-price">R$ {{ "%.2f"|format(m.price) }}/{{ m.unit_label }}</div>
     </div>
     <div class="stock-card-right">
-      <div class="stock-card-qty {% if m.qty_stock <= 0 %}qty-zero{% elif m.qty_stock < 5 %}qty-low{% else %}qty-ok{% endif %}">
+      <div class="stock-card-qty {% if m.qty_stock <= 0 %}qty-zero{% elif m.qty_stock < 5 %}qty-low{% else %}qty-ok{% endif %}" style="margin-bottom:8px;">
         {% if m.unit == 'un' %}{{ m.qty_stock|int }}{% else %}{{ "%.2f"|format(m.qty_stock) }}{% endif %}
         <span style="font-size:.75rem;font-weight:400;">{{ m.unit_label }}</span>
       </div>
-      <button class="btn btn-secondary btn-sm" style="margin-top:8px;"
-        data-id="{{ m.id }}" data-name="{{ m.name }}"
-        data-stock="{{ m.qty_stock }}" data-unit="{{ m.unit_label }}"
-        onclick="openAdjust(this)">Ajustar</button>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn btn-primary btn-sm"
+          data-id="{{ m.id }}" data-name="{{ m.name }}" data-unit="{{ m.unit_label }}"
+          onclick="openBuyFor(this)">+ Entrada</button>
+        <button class="btn btn-secondary btn-sm"
+          onclick="toggleHistory('hist-{{ m.id }}')">Histórico</button>
+      </div>
+    </div>
+    <!-- history collapse -->
+    <div id="hist-{{ m.id }}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+      <div style="font-size:.75rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Histórico</div>
+      {% set hist = purchases | selectattr('material_id', 'equalto', m.id) | list %}
+      {% if hist %}
+        {% for p in hist %}
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;border-bottom:1px solid var(--border);">
+          <span class="text-muted">{{ p.created_at.strftime('%d/%m/%y') }} · {{ "%.2f"|format(p.qty) }} {{ p.unit_label }}</span>
+          <span class="text-mono">R$ {{ "%.2f"|format(p.total_cost) }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="color:var(--muted);font-size:.82rem;">Nenhuma entrada registrada</div>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
@@ -173,9 +192,18 @@ function calcTotal() {
   const cost = parseFloat(document.querySelector('[name=unit_cost]').value) || 0;
   document.getElementById('buyTotal').textContent = 'R$ ' + (qty*cost).toFixed(2).replace('.',',');
 }
+function openBuyFor(btn) {
+  const sel = document.querySelector('#buyModal [name=material_id]');
+  if (sel) sel.value = btn.dataset.id;
+  openModal('buyModal');
+}
+function toggleHistory(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 function openAdjust(btn) {
   document.getElementById('adjustMatId').value = btn.dataset.id;
-  document.getElementById('adjustMatName').textContent = btn.dataset.name + ' — atual: ' + btn.dataset.stock + ' ' + btn.dataset.unit;
+  document.getElementById('adjustMatName').textContent = btn.dataset.name;
   document.getElementById('adjustQty').value = btn.dataset.stock;
   openModal('adjustModal');
 }
