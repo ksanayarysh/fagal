@@ -245,7 +245,7 @@ select.form-control option { background: var(--surface2); }
 /* RESPONSIVE HELPERS */
 .desktop-only { display: block !important; }
 .mobile-only { display: none !important; }
-@media (max-width: 700px) {
+@media screen and (max-width: 768px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; flex-direction: column; gap: 10px; }
   .mat-cards { gap: 8px !important; }
@@ -391,7 +391,7 @@ select.form-control option { background: var(--surface2); }
 }
 .nav-links { display: flex; align-items: center; }
 
-@media (max-width: 700px) {
+@media screen and (max-width: 768px) {
   .nav { padding: 0 16px; position: relative; z-index: 300; }
   .nav-burger { display: block; }
   .nav-links {

@@ -27,5 +27,19 @@
   {% block content %}{% endblock %}
 </div>
 {% block scripts %}{% endblock %}
+<script>
+// Force responsive state on load and resize (Firefox fix)
+function applyResponsive() {
+  const isMobile = window.innerWidth <= 768;
+  document.querySelectorAll('.desktop-only').forEach(el => {
+    el.style.display = isMobile ? 'none' : '';
+  });
+  document.querySelectorAll('.mobile-only').forEach(el => {
+    el.style.display = isMobile ? 'flex' : 'none';
+  });
+}
+document.addEventListener('DOMContentLoaded', applyResponsive);
+window.addEventListener('resize', applyResponsive);
+</script>
 </body>
 </html>
