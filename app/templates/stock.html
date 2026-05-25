@@ -10,8 +10,47 @@
   <button class="btn btn-primary" onclick="openModal('buyModal')">+ Registrar compra</button>
 </div>
 
-<!-- STOCK CARDS -->
-<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+<!-- STOCK: desktop table -->
+<div class="card table-wrap desktop-only mb-16">
+  <table>
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th>Categoria</th>
+        <th>Unidade</th>
+        <th>Em estoque</th>
+        <th>Preço unit.</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in materials %}
+      <tr>
+        <td><strong>{{ m.name }}</strong></td>
+        <td class="text-muted">{{ m.category }}</td>
+        <td><span class="unit-badge">{{ m.unit_label }}</span></td>
+        <td>
+          <span class="text-mono" style="font-size:1.05rem;
+            {% if m.qty_stock <= 0 %}color:var(--red){% elif m.qty_stock < 5 %}color:var(--accent){% else %}color:var(--green){% endif %}">
+            {% if m.unit == 'un' %}{{ m.qty_stock|int }}{% else %}{{ "%.3f"|format(m.qty_stock) }}{% endif %}
+          </span>
+          <span class="text-muted" style="font-size:.85rem;"> {{ m.unit_label }}</span>
+        </td>
+        <td class="text-mono">R$ {{ "%.2f"|format(m.price) }}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm"
+            data-id="{{ m.id }}" data-name="{{ m.name }}"
+            data-stock="{{ m.qty_stock }}" data-unit="{{ m.unit_label }}"
+            onclick="openAdjust(this)">Ajustar</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- STOCK: mobile cards -->
+<div class="mobile-only" style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
   {% for m in materials %}
   <div class="stock-card">
     <div class="stock-card-left">

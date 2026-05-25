@@ -30,7 +30,8 @@
   {% for cat, items in cats.items() %}
   <div class="cat-group" data-cat="{{ cat }}">
     <div class="cat-title">{{ cat }}</div>
-    <div class="table-wrap">
+    <!-- DESKTOP TABLE -->
+    <div class="table-wrap desktop-only">
       <table>
         <thead>
           <tr>
@@ -62,6 +63,33 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+    <!-- MOBILE CARDS -->
+    <div class="mobile-only" style="display:flex;flex-direction:column;gap:8px;">
+      {% for m in items %}
+      <div class="mat-card">
+        <div class="mat-card-left">
+          <div class="mat-card-name">{{ m.name }}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
+            <span class="unit-badge">{{ units[m.unit] }}</span>
+            <span class="text-mono" style="font-size:.9rem;color:var(--accent);">R$ {{ "%.2f"|format(m.price) }}</span>
+            {% if m.purchase_price %}
+            <span class="text-muted" style="font-size:.82rem;">compra: R$ {{ "%.2f"|format(m.purchase_price) }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <button class="btn btn-secondary btn-sm"
+            data-id="{{ m.id }}" data-name="{{ m.name }}" data-cat="{{ m.category }}"
+            data-unit="{{ m.unit }}" data-price="{{ m.price }}" data-purchase="{{ m.purchase_price or '' }}"
+            onclick='openEdit(this)'>✏️</button>
+          <form method="post" action="/materiais/{{ m.id }}/delete" style="display:inline"
+                onsubmit="return confirm('Remover {{ m.name }}?')">
+            <button type="submit" class="btn btn-danger btn-sm">✕</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
   {% endfor %}
