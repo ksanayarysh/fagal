@@ -243,11 +243,12 @@ select.form-control option { background: var(--surface2); }
 }
 
 /* RESPONSIVE HELPERS */
-.desktop-only { display: block; }
-.mobile-only { display: none; }
+.desktop-only { display: block !important; }
+.mobile-only { display: none !important; }
 @media (max-width: 700px) {
   .desktop-only { display: none !important; }
-  .mobile-only { display: flex !important; }
+  .mobile-only { display: flex !important; flex-direction: column; gap: 10px; }
+  .mat-cards { gap: 8px !important; }
 }
 
 /* MAT CARDS */
