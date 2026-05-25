@@ -21,12 +21,14 @@ async def login_page(request: Request, error: str = ""):
     return templates.TemplateResponse("login.html", {"request": request, "error": error})
 
 @router.post("/login")
-async def login(request: Request, password: str = Form(...)):
+async def login(request: Request, password: str = Form("")):
+    if not password:
+        return RedirectResponse("/login?error=vazio", status_code=303)
     if password == MASTER_PASSWORD:
         response = RedirectResponse("/vendas", status_code=303)
         response.set_cookie("session", SESSION_TOKEN, httponly=True, max_age=86400*30)
         return response
-    return RedirectResponse("/login?error=1", status_code=303)
+    return RedirectResponse("/login?error=senha", status_code=303)
 
 @router.get("/logout")
 async def logout():

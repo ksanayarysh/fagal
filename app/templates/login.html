@@ -13,13 +13,17 @@
     <div class="login-logo">FAGAL</div>
     <div class="login-sub">Sistema de ponto de venda</div>
 
-    {% if error %}
+    {% if error == 'vazio' %}
     <div style="background:rgba(231,76,60,.15);color:#e74c3c;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:.875rem;">
-      Senha incorreta.
+      Por favor, digite a senha.
+    </div>
+    {% elif error %}
+    <div style="background:rgba(231,76,60,.15);color:#e74c3c;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:.875rem;">
+      Senha incorreta. Tente novamente.
     </div>
     {% endif %}
 
-    <form method="post" action="/login">
+    <form method="post" action="/login" enctype="application/x-www-form-urlencoded">
       <div class="form-group">
         <label class="form-label">Senha</label>
         <input type="password" name="password" class="form-control" autofocus placeholder="••••••••">
