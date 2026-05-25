@@ -78,9 +78,15 @@
       {% set hist = purchases | selectattr('material_id', 'equalto', m.id) | list %}
       {% if hist %}
         {% for p in hist %}
-        <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:4px 0;border-bottom:1px solid var(--border);gap:8px;">
           <span class="text-muted">{{ p.created_at.strftime('%d/%m/%y') }} · {{ "%.2f"|format(p.qty) }} {{ p.unit_label }}</span>
-          <span class="text-mono">R$ {{ "%.2f"|format(p.total_cost) }}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <span class="text-mono">R$ {{ "%.2f"|format(p.total_cost) }}</span>
+            <form method="post" action="/estoque/compra/{{ p.id }}/delete" style="display:inline"
+                  onsubmit="return confirm('Remover esta entrada?')">
+              <button type="submit" class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:.75rem;">✕</button>
+            </form>
+          </div>
         </div>
         {% endfor %}
       {% else %}

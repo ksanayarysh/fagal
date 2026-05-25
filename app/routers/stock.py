@@ -100,3 +100,22 @@ async def adjust_stock(
             material_id, qty, note.strip() or "Ajuste manual"
         )
     return RedirectResponse("/estoque", status_code=303)
+
+@router.post("/compra/{purchase_id}/delete")
+async def delete_purchase(request: Request, purchase_id: int):
+    if not is_authenticated(request):
+        return RedirectResponse("/login")
+    pool = request.app.state.db
+    async with pool.acquire() as conn:
+        p = await conn.fetchrow("SELECT * FROM purchases WHERE id=$1", purchase_id)
+        if p:
+            await conn.execute(
+                "UPDATE materials SET qty_stock = GREATEST(0, qty_stock - $1) WHERE id=$2",
+                float(p["qty"]), p["material_id"]
+            )
+            await conn.execute("DELETE FROM purchases WHERE id=$1", purchase_id)
+            await conn.execute(
+                "DELETE FROM stock_movements WHERE ref_id=$1 AND type='purchase'",
+                purchase_id
+            )
+    return RedirectResponse("/estoque", status_code=303)
