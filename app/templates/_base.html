@@ -12,14 +12,29 @@
 <body>
 <nav class="nav">
   <div class="nav-logo">FAGAL <span>PDV</span></div>
-  <a href="/vendas" class="{% if active == 'vendas' %}active{% endif %}">Vendas</a>
-  <a href="/vendas/nova" class="{% if active == 'nova' %}active{% endif %}">+ Nova venda</a>
-  <a href="/materiais" class="{% if active == 'materiais' %}active{% endif %}">Materiais</a>
-  <a href="/estoque" class="{% if active == 'estoque' %}active{% endif %}">Estoque</a>
-  <a href="/categorias" class="{% if active == 'categorias' %}active{% endif %}">Categorias</a>
   <div class="nav-spacer"></div>
-  <a href="/logout" class="nav-logout">Sair</a>
+  <button class="nav-burger" onclick="toggleMenu()" aria-label="Menu">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="/vendas" class="{% if active == 'vendas' %}active{% endif %}">Vendas</a>
+    <a href="/vendas/nova" class="{% if active == 'nova' %}active{% endif %}">+ Nova venda</a>
+    <a href="/materiais" class="{% if active == 'materiais' %}active{% endif %}">Materiais</a>
+    <a href="/estoque" class="{% if active == 'estoque' %}active{% endif %}">Estoque</a>
+    <a href="/categorias" class="{% if active == 'categorias' %}active{% endif %}">Categorias</a>
+    <a href="/logout" class="nav-logout">Sair</a>
+  </div>
 </nav>
+<script>
+function toggleMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const links = document.getElementById('navLinks');
+  const burger = document.querySelector('.nav-burger');
+  if (!links.contains(e.target) && !burger.contains(e.target)) {
+    links.classList.remove('open');
+  }
+});
+</script>
 <div class="main">
   {% block content %}{% endblock %}
 </div>

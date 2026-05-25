@@ -167,17 +167,27 @@
 
   .cart-panel {
     position: fixed;
-    bottom: 0; left: 0; right: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    box-sizing: border-box;
     border-radius: 16px 16px 0 0;
     border: none;
     border-top: 2px solid var(--accent);
     transform: translateY(calc(100% - 58px));
+    -webkit-transform: translateY(calc(100% - 58px));
     transition: transform .3s ease;
+    -webkit-transition: -webkit-transform .3s ease;
     z-index: 100;
     max-height: 92vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
-  .cart-panel.open { transform: translateY(0); }
+  .cart-panel.open {
+    transform: translateY(0);
+    -webkit-transform: translateY(0);
+  }
   .cart-header { cursor: pointer; }
   .cart-header::after { content: '▲'; font-size:.75rem; color:var(--muted); }
   .cart-panel.open .cart-header::after { content: '▼'; }
