@@ -242,6 +242,32 @@ select.form-control option { background: var(--surface2); }
   margin-bottom: 28px;
 }
 
+/* STOCK CARDS */
+.stock-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.stock-card-left { flex: 1; min-width: 0; }
+.stock-card-name { font-weight: 700; font-size: .95rem; margin-bottom: 3px; }
+.stock-card-cat { font-size: .82rem; color: var(--muted); margin-bottom: 3px; }
+.stock-card-price { font-size: .82rem; color: var(--muted); font-family: var(--mono); }
+.stock-card-right { text-align: right; flex-shrink: 0; }
+.stock-card-qty {
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.qty-zero { color: var(--red); }
+.qty-low { color: var(--accent); }
+.qty-ok { color: var(--green); }
+
 /* SALE CARDS */
 .sale-card {
   background: var(--surface);
