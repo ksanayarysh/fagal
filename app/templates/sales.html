@@ -3,9 +3,9 @@
 <script>
 function filterSales(q) {
   const query = q.trim().toLowerCase();
-  document.querySelectorAll('#salesTable tbody tr').forEach(row => {
-    const client = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
-    row.style.display = (!query || client.includes(query)) ? '' : 'none';
+  document.querySelectorAll('#salesTable .sale-card').forEach(card => {
+    const client = card.querySelector('strong')?.textContent.toLowerCase() || '';
+    card.style.display = (!query || client.includes(query)) ? '' : 'none';
   });
 }
 </script>
@@ -39,54 +39,44 @@ function filterSales(q) {
          oninput="filterSales(this.value)"
          style="max-width:320px;">
 </div>
-<div class="card table-wrap" id="salesTable">
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Cliente</th>
-        <th>Telefone</th>
-        <th>Endereço</th>
-        <th>Obs</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Data</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for s in sales %}
-      <tr style="cursor:pointer;" onclick="window.location='/vendas/{{ s.id }}'">
-        <td class="text-mono text-muted">#{{ s.id }}</td>
-        <td><strong>{{ s.client_name }}</strong></td>
-        <td class="text-muted" style="white-space:nowrap;">{{ s.phone or '—' }}</td>
-        <td class="text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.address or '—' }}</td>
-        <td class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.note or '—' }}</td>
-        <td class="text-mono"><strong>R$ {{ "%.2f"|format(s.total) }}</strong></td>
-        <td>
-          {% if s.get('is_orcamento') %}
-            <span class="badge badge-muted">📋 Orçamento</span>
-          {% elif s.paid %}
-            <span class="badge badge-green">✓ Pago</span>
-          {% else %}
-            <span class="badge badge-orange">Pendente</span>
-          {% endif %}
-        </td>
-        <td class="text-muted" style="white-space:nowrap;font-size:.82rem;">
-          {{ s.created_at.strftime('%d/%m/%Y %H:%M') }}
-        </td>
-        <td onclick="event.stopPropagation()" style="white-space:nowrap;">
-          <a href="/vendas/{{ s.id }}" class="btn btn-secondary btn-sm">Ver</a>
-          <form method="post" action="/vendas/{{ s.id }}/delete" style="display:inline"
-                onsubmit="return confirm('Excluir venda #{{ s.id }}?')">
-            <button type="submit" class="btn btn-danger btn-sm">✕</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<div id="salesTable" style="display:flex;flex-direction:column;gap:10px;">
+  {% for s in sales %}
+  <div class="sale-card" onclick="window.location='/vendas/{{ s.id }}'">
+    <div class="sale-card-top">
+      <div>
+        <span class="text-mono text-muted" style="font-size:.8rem;">#{{ s.id }}</span>
+        <strong style="margin-left:8px;font-size:1rem;">{{ s.client_name }}</strong>
+      </div>
+      <div class="text-mono" style="font-size:1.1rem;font-weight:800;color:var(--accent);">R$ {{ "%.2f"|format(s.total) }}</div>
+    </div>
+    {% if s.phone or s.address or s.note %}
+    <div class="sale-card-mid">
+      {% if s.phone %}<span>📞 {{ s.phone }}</span>{% endif %}
+      {% if s.address %}<span>📍 {{ s.address }}</span>{% endif %}
+      {% if s.note %}<span class="text-muted">{{ s.note }}</span>{% endif %}
+    </div>
+    {% endif %}
+    <div class="sale-card-bot">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        {% if s.get('is_orcamento') %}
+          <span class="badge badge-muted">📋 Orçamento</span>
+        {% elif s.paid %}
+          <span class="badge badge-green">✓ Pago</span>
+        {% else %}
+          <span class="badge badge-orange">Pendente</span>
+        {% endif %}
+        <span class="text-muted" style="font-size:.82rem;">{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+      </div>
+      <div onclick="event.stopPropagation()" style="display:flex;gap:6px;">
+        <a href="/vendas/{{ s.id }}" class="btn btn-secondary btn-sm">Ver</a>
+        <form method="post" action="/vendas/{{ s.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Excluir venda #{{ s.id }}?')">
+          <button type="submit" class="btn btn-danger btn-sm">✕</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 {% else %}
 <div class="card" style="text-align:center;padding:56px;color:var(--muted);">
