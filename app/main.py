@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 import asyncpg, os
 
-from app.routers import materials, sales, auth, stock, categories
+from app.routers import materials, sales, auth, stock, categories, reports
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 
@@ -101,6 +101,7 @@ app.include_router(materials.router)
 app.include_router(sales.router)
 app.include_router(stock.router)
 app.include_router(categories.router)
+app.include_router(reports.router)
 
 @app.get("/")
 async def root():

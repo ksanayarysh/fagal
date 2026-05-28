@@ -1,0 +1,204 @@
+{% extends "_base.html" %}
+{% block title %}Relatórios{% endblock %}
+
+{% block head %}
+<style>
+.report-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+.kpi-label { font-size: .72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.kpi-value { font-family: var(--mono); font-size: 1.6rem; font-weight: 800; color: var(--accent); }
+.kpi-sub { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.section-title { font-size: .72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 28px 0 12px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: .88rem; }
+.bar-row-label { width: 140px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.bar-track { flex: 1; height: 14px; background: var(--surface2); border-radius: 7px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 7px; background: var(--accent); }
+.bar-val { width: 90px; text-align: right; font-family: var(--mono); font-size: .82rem; color: var(--muted); flex-shrink: 0; }
+.daily-wrap { display: flex; align-items: flex-end; gap: 3px; height: 100px; padding-top: 8px; margin-bottom: 4px; overflow-x: auto; }
+.daily-bar-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 22px; }
+.daily-bar { width: 16px; border-radius: 3px 3px 0 0; background: var(--accent); min-height: 2px; cursor: pointer; transition: opacity .15s; }
+.daily-bar:hover { opacity: .75; }
+.daily-label { font-size: .65rem; color: var(--muted); margin-top: 2px; }
+.split-card { display: flex; gap: 16px; }
+.split-card .kpi-card { flex: 1; }
+@media (max-width: 640px) { .bar-row-label { width: 90px; } .split-card { flex-direction: column; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Relatórios</div>
+    <div class="page-subtitle">{{ start_month.strftime('%B de %Y') }}</div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="report-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">📅 Hoje</div>
+    <div class="kpi-value">R$ {{ "%.2f"|format(today_rev) }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">📊 Média diária (7 dias)</div>
+    <div class="kpi-value">R$ {{ "%.2f"|format(avg7) }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">🗓 Este mês</div>
+    <div class="kpi-value">R$ {{ "%.2f"|format(month_rev) }}</div>
+    <div class="kpi-sub">{{ month_count }} venda{{ 's' if month_count != 1 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">🎟 Ticket médio</div>
+    <div class="kpi-value">R$ {{ "%.2f"|format(avg_ticket) }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">🔧 Mão de obra</div>
+    <div class="kpi-value">R$ {{ "%.2f"|format(labor_total) }}</div>
+    <div class="kpi-sub">materiais: R$ {{ "%.2f"|format(mat_total_month) }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">💰 Lucro estimado</div>
+    <div class="kpi-value" style="color:{% if profit_est > 0 %}var(--green){% else %}var(--red){% endif %};">R$ {{ "%.2f"|format(profit_est) }}</div>
+    <div class="kpi-sub">custo materiais: R$ {{ "%.2f"|format(profit_cost) }}{% if rev_no_cost > 0 %} · sem custo: R$ {{ "%.2f"|format(rev_no_cost) }}{% endif %}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">📋 Orçamentos abertos</div>
+    <div class="kpi-value">{{ orcamentos|length }}</div>
+    <div class="kpi-sub">{% set orca_total = namespace(v=0) %}{% for o in orcamentos %}{% set orca_total.v = orca_total.v + o.total %}{% endfor %}R$ {{ "%.2f"|format(orca_total.v) }} em aberto</div>
+  </div>
+</div>
+
+<!-- Daily chart -->
+<div class="section-title">📅 Receita por dia do mês</div>
+<div class="card" style="padding:16px 20px;">
+  {% if daily %}
+  <div class="daily-wrap">
+    {% for d in daily %}
+    {% set pct = (d.rev / max_daily * 100)|int %}
+    <div class="daily-bar-col" title="Dia {{ d.d }}: R$ {{ '%.2f'|format(d.rev) }} · {{ d.cnt }} venda{{ 's' if d.cnt != 1 }}">
+      <div class="daily-bar" style="height:{{ [pct, 4]|max }}px;"></div>
+      <div class="daily-label">{{ d.d }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-muted" style="text-align:center;padding:24px;">Sem vendas este mês</div>
+  {% endif %}
+</div>
+
+<!-- Monthly comparison -->
+<div class="section-title">📆 Comparação mensal (6 meses)</div>
+<div class="card" style="padding:16px 20px;">
+  {% for m in monthly %}
+  <div class="bar-row">
+    <div class="bar-row-label">{{ m.m }}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:{{ (m.rev / max_monthly * 100)|int }}%;"></div>
+    </div>
+    <div class="bar-val">R$ {{ "%.0f"|format(m.rev) }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- By weekday -->
+<div class="section-title">📅 Por dia da semana (90 dias)</div>
+<div class="card" style="padding:16px 20px;">
+  {% for d in by_weekday %}
+  <div class="bar-row">
+    <div class="bar-row-label">{{ d.d }}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:{{ (d.rev / max_weekday * 100)|int if max_weekday > 0 else 0 }}%;{% if loop.index == 7 %}background:var(--green);{% endif %}"></div>
+    </div>
+    <div class="bar-val">R$ {{ "%.0f"|format(d.rev) }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- By section -->
+{% if by_section %}
+<div class="section-title">📁 Por seção (este mês)</div>
+<div class="card" style="padding:16px 20px;">
+  {% set max_sec = by_section[0].rev %}
+  {% for s in by_section %}
+  <div class="bar-row">
+    <div class="bar-row-label" title="{{ s.name }}">{{ s.name }}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:{{ (s.rev / max_sec * 100)|int }}%;background:#8b5cf6;"></div>
+    </div>
+    <div class="bar-val">R$ {{ "%.0f"|format(s.rev) }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Top materials -->
+{% if top_materials %}
+<div class="section-title">🏆 Top materiais (este mês)</div>
+<div class="card" style="padding:16px 20px;">
+  {% set max_mat = top_materials[0].rev %}
+  {% for m in top_materials %}
+  <div class="bar-row">
+    <div class="bar-row-label" title="{{ m.name }}">{{ m.name }}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:{{ (m.rev / max_mat * 100)|int }};background:#06b6d4;"></div>
+    </div>
+    <div class="bar-val">R$ {{ "%.0f"|format(m.rev) }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Top clients -->
+{% if clients %}
+<div class="section-title">👤 Top clientes (este mês)</div>
+<div class="card" style="padding:16px 20px;">
+  {% set max_cli = clients[0].rev %}
+  {% for c in clients %}
+  <div class="bar-row">
+    <div class="bar-row-label">{{ c.name }}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:{{ (c.rev / max_cli * 100)|int }}%;background:#10b981;"></div>
+    </div>
+    <div class="bar-val">R$ {{ "%.0f"|format(c.rev) }} · {{ c.cnt }}x</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Pending orcamentos -->
+{% if orcamentos %}
+<div class="section-title">📋 Orçamentos em aberto</div>
+<div class="card table-wrap desktop-only">
+  <table>
+    <thead><tr><th>#</th><th>Cliente</th><th>Total</th><th>Data</th><th></th></tr></thead>
+    <tbody>
+      {% for o in orcamentos %}
+      <tr onclick="window.location='/vendas/{{ o.id }}'" style="cursor:pointer;">
+        <td class="text-muted">#{{ o.id }}</td>
+        <td><strong>{{ o.client_name }}</strong></td>
+        <td class="text-mono">R$ {{ "%.2f"|format(o.total) }}</td>
+        <td class="text-muted">{{ o.created_at.strftime('%d/%m/%Y') }}</td>
+        <td><a href="/vendas/{{ o.id }}" class="btn btn-secondary btn-sm">Ver</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mobile-only" style="flex-direction:column;gap:8px;">
+  {% for o in orcamentos %}
+  <div class="sale-card" onclick="window.location='/vendas/{{ o.id }}'">
+    <div class="sale-card-top">
+      <div><span class="text-muted" style="font-size:.8rem;">#{{ o.id }}</span> <strong>{{ o.client_name }}</strong></div>
+      <div class="text-mono" style="color:var(--accent);font-weight:800;">R$ {{ "%.2f"|format(o.total) }}</div>
+    </div>
+    <div class="sale-card-bot">
+      <span class="text-muted" style="font-size:.82rem;">{{ o.created_at.strftime('%d/%m/%Y') }}</span>
+      <a href="/vendas/{{ o.id }}" class="btn btn-secondary btn-sm">Ver</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}
